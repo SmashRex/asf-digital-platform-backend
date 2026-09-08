@@ -1,0 +1,118 @@
+import { db } from "../../db/index.js";
+import { users, userRoles, userAcademicHistory, academicSessions, magicLinkTokens,userSessions } from "../../db/schema/index.js";
+import type { RegisterInput } from "./auth.validation.js";
+import { and, eq, gt, sql as rawSql, sql } from "drizzle-orm";
+
+export async function findUserByEmail(email: string) {
+  return db.query.users.findFirst({
+    where: sql`lower(${users.email}) = ${email}`,
+  });
+}
+
+export async function getActiveAcademicSession() {
+  return db.query.academicSessions.findFirst({
+    where: eq(academicSessions.isActive, true),
+  });
+}
+
+export async function createUserWithRegistration(
+  input: RegisterInput,
+  activeSessionId: string,
+  tokenHash: string,
+  tokenExpiresAt: Date,
+  ipAddress: string | null
+) {
+  return db.transaction(async (tx) => {
+    const [user] = await tx
+      .insert(users)
+      .values({
+        email: input.email,
+        name: input.name,
+        department: input.department,
+        academicLevel: input.academicLevel,
+        phoneNumber: input.phoneNumber,
+        subgroup: input.subgroup,
+        accountStatus: "Active",
+        membershipStatus: input.academicLevel === "Alumni" ? "Alumni" : "Active Student",
+      })
+      .returning();
+
+    await tx.insert(userRoles).values({
+      userId: user.id,
+      roleId: "Member",
+    });
+
+    await tx.insert(userAcademicHistory).values({
+      userId: user.id,
+      academicSessionId: activeSessionId,
+      academicLevel: input.academicLevel,
+      progressionStatus: "Registered",
+    });
+
+    await tx.insert(magicLinkTokens).values({
+      userId: user.id,
+      email: user.email,
+      tokenHash,
+      expiresAt: tokenExpiresAt,
+      ipAddress: ipAddress ?? undefined,
+    });
+
+    return user;
+  });
+}
+
+export async function findAndLockValidToken(tx: any, tokenHash: string) {
+  const rows = await tx
+    .select()
+    .from(magicLinkTokens)
+    .where(
+      and(
+        eq(magicLinkTokens.tokenHash, tokenHash),
+        eq(magicLinkTokens.isConsumed, false),
+        gt(magicLinkTokens.expiresAt, new Date())
+      )
+    )
+    .for("update");
+
+  return rows[0] ?? null;
+}
+
+export async function markTokenConsumed(tx: any, tokenId: string) {
+  await tx
+    .update(magicLinkTokens)
+    .set({ isConsumed: true, consumedAt: new Date() })
+    .where(eq(magicLinkTokens.id, tokenId));
+}
+
+export async function findUserById(tx: any, userId: string) {
+  return tx.query.users.findFirst({ where: eq(users.id, userId) });
+}
+
+export async function getUserRoleIds(tx: any, userId: string) {
+  const rows = await tx
+    .select({ roleId: userRoles.roleId })
+    .from(userRoles)
+    .where(eq(userRoles.userId, userId));
+  return rows.map((r: { roleId: string }) => r.roleId);
+}
+
+export async function createSession(
+  tx: any,
+  userId: string,
+  sessionTokenHash: string,
+  expiresAt: Date,
+  deviceInfo: string | null,
+  ipAddress: string | null
+) {
+  const [session] = await tx
+    .insert(userSessions)
+    .values({
+      userId,
+      sessionTokenHash,
+      expiresAt,
+      deviceInfo: deviceInfo ?? undefined,
+      ipAddress: ipAddress ?? undefined,
+    })
+    .returning();
+  return session;
+}
