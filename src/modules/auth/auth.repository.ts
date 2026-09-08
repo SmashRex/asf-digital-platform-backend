@@ -2,6 +2,7 @@ import { db } from "../../db/index.js";
 import { users, userRoles, userAcademicHistory, academicSessions, magicLinkTokens,userSessions } from "../../db/schema/index.js";
 import type { RegisterInput } from "./auth.validation.js";
 import { and, eq, gt, sql as rawSql, sql } from "drizzle-orm";
+import type { Transaction } from "../../db/index.js";
 
 export async function findUserByEmail(email: string) {
   return db.query.users.findFirst({
@@ -84,8 +85,8 @@ export async function markTokenConsumed(tx: any, tokenId: string) {
     .where(eq(magicLinkTokens.id, tokenId));
 }
 
-export async function findUserById(tx: any, userId: string) {
-  return tx.query.users.findFirst({ where: eq(users.id, userId) });
+export async function findUserById(dbOrTx: typeof db | Transaction, userId: string) {
+  return dbOrTx.query.users.findFirst({ where: eq(users.id, userId) });
 }
 
 export async function getUserRoleIds(tx: any, userId: string) {
@@ -115,4 +116,36 @@ export async function createSession(
     })
     .returning();
   return session;
+}
+
+export async function findActiveSessionByHash(sessionTokenHash: string) {
+  return db.query.userSessions.findFirst({
+    where: and(
+      eq(userSessions.sessionTokenHash, sessionTokenHash),
+      eq(userSessions.isRevoked, false),
+      gt(userSessions.expiresAt, new Date())
+    ),
+  });
+}
+
+export async function touchSession(sessionId: string, newExpiresAt: Date | null) {
+  await db
+    .update(userSessions)
+    .set({
+      lastActiveAt: new Date(),
+      ...(newExpiresAt ? { expiresAt: newExpiresAt } : {}),
+    })
+    .where(eq(userSessions.id, sessionId));
+}
+
+export async function getUserRolesByUserId(userId: string) {
+  const rows = await db
+    .select({ roleId: userRoles.roleId })
+    .from(userRoles)
+    .where(eq(userRoles.userId, userId));
+  return rows.map((r) => r.roleId);
+}
+
+export async function revokeSessionById(sessionId: string) {
+  await db.update(userSessions).set({ isRevoked: true }).where(eq(userSessions.id, sessionId));
 }

@@ -5,6 +5,7 @@ import { sendSuccess } from "../../utils/apiResponse.js";
 import { AppError } from "../../errors/appError.js";
 import { appConfig } from "../../config/app.config.js";
 import { env } from "../../config/env.config.js";
+import { revokeSession } from "./auth.service.js";
 
 export async function register(req: Request, res: Response, next: NextFunction) {
   try {
@@ -57,6 +58,26 @@ export async function verify(req: Request, res: Response, next: NextFunction) {
       subgroup: user.subgroup,
       roles,
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function me(req: Request, res: Response, next: NextFunction) {
+  try {
+    return sendSuccess(res, req.user);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function logout(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (req.sessionId) {
+      await revokeSession(req.sessionId);
+    }
+    res.clearCookie("asf_session", { path: "/" });
+    return sendSuccess(res, null, "Logged out successfully");
   } catch (err) {
     next(err);
   }

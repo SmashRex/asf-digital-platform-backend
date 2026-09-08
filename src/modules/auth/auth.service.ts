@@ -82,3 +82,7 @@ export async function verifyMagicLink(
 
   return result;
 }
+
+export async function revokeSession(sessionId: string) {
+  await authRepository.revokeSessionById(sessionId);
+}
