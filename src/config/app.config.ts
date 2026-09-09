@@ -13,6 +13,6 @@ export const appConfig = {
 
   rateLimit: {
     authWindowMinutes: 15,
-    authMaxRequests: 10,
+    authMaxRequests: 5,
   },
 } as const;

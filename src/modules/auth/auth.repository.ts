@@ -1,9 +1,9 @@
 import { db } from "../../db/index.js";
 import { users, userRoles, userAcademicHistory, academicSessions, magicLinkTokens,userSessions } from "../../db/schema/index.js";
 import type { RegisterInput } from "./auth.validation.js";
-import { and, eq, gt, sql as rawSql, sql } from "drizzle-orm";
+import { and, eq, gt, ne,sql as rawSql, sql } from "drizzle-orm";
 import type { Transaction } from "../../db/index.js";
-import { and, eq, gt, ne, sql } from "drizzle-orm";
+//import { and, eq, gt, ne, sql } from "drizzle-orm";
 
 export async function findUserByEmail(email: string) {
   return db.query.users.findFirst({
