@@ -82,3 +82,21 @@ export async function logout(req: Request, res: Response, next: NextFunction) {
     next(err);
   }
 }
+
+import { magicLinkRequestSchema } from "./auth.validation.js";
+import { requestMagicLink } from "./auth.service.js";
+
+export async function requestLogin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const parsed = magicLinkRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw AppError.badRequest("Invalid request", "VALIDATION_ERROR", parsed.error.flatten().fieldErrors);
+    }
+
+    await requestMagicLink(parsed.data.email, req.ip ?? null);
+
+    return sendSuccess(res, null, "If an account exists, a sign-in link has been sent");
+  } catch (err) {
+    next(err);
+  }
+}

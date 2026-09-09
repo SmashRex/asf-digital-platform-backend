@@ -1,0 +1,2 @@
+ALTER TABLE "users" ADD COLUMN "program_duration_years" smallint DEFAULT 4 NOT NULL;--> statement-breakpoint
+ALTER TABLE "users" ADD CONSTRAINT "chk_program_duration" CHECK ("users"."program_duration_years" IN (4, 5));

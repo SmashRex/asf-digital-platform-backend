@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, uniqueIndex, index, check } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, timestamp, smallint, uniqueIndex, index, check } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 export const users = pgTable(
@@ -9,6 +9,7 @@ export const users = pgTable(
     name: varchar("name", { length: 255 }).notNull(),
     department: varchar("department", { length: 255 }).notNull(),
     academicLevel: varchar("academic_level", { length: 50 }).notNull(),
+    programDurationYears: smallint("program_duration_years").notNull().default(4),
     phoneNumber: varchar("phone_number", { length: 50 }),
     subgroup: varchar("subgroup", { length: 100 }),
     accountStatus: varchar("account_status", { length: 50 }).notNull().default("Active"),
@@ -27,5 +28,6 @@ export const users = pgTable(
       "chk_academic_level",
       sql`${table.academicLevel} IN ('100 Level', '200 Level', '300 Level', '400 Level', '500 Level', 'Postgraduate', 'Alumni')`
     ),
+    check("chk_program_duration", sql`${table.programDurationYears} IN (4, 5)`),
   ]
 );

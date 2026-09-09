@@ -3,6 +3,7 @@ import { users, userRoles, userAcademicHistory, academicSessions, magicLinkToken
 import type { RegisterInput } from "./auth.validation.js";
 import { and, eq, gt, sql as rawSql, sql } from "drizzle-orm";
 import type { Transaction } from "../../db/index.js";
+import { and, eq, gt, ne, sql } from "drizzle-orm";
 
 export async function findUserByEmail(email: string) {
   return db.query.users.findFirst({
@@ -27,15 +28,16 @@ export async function createUserWithRegistration(
     const [user] = await tx
       .insert(users)
       .values({
-        email: input.email,
-        name: input.name,
-        department: input.department,
-        academicLevel: input.academicLevel,
-        phoneNumber: input.phoneNumber,
-        subgroup: input.subgroup,
-        accountStatus: "Active",
-        membershipStatus: input.academicLevel === "Alumni" ? "Alumni" : "Active Student",
-      })
+  email: input.email,
+  name: input.name,
+  department: input.department,
+  academicLevel: input.academicLevel,
+  programDurationYears: input.programDurationYears,
+  phoneNumber: input.phoneNumber,
+  subgroup: input.subgroup,
+  accountStatus: "Active",
+  membershipStatus: input.academicLevel === "Alumni" ? "Alumni" : "Active Student",
+})
       .returning();
 
     await tx.insert(userRoles).values({
@@ -148,4 +150,27 @@ export async function getUserRolesByUserId(userId: string) {
 
 export async function revokeSessionById(sessionId: string) {
   await db.update(userSessions).set({ isRevoked: true }).where(eq(userSessions.id, sessionId));
+}
+
+export async function findActiveUserByEmail(email: string) {
+  return db.query.users.findFirst({
+    where: and(sql`lower(${users.email}) = ${email}`, ne(users.accountStatus, "Suspended")),
+  });
+}
+
+export async function invalidateUnconsumedTokens(userId: string) {
+  await db
+    .update(magicLinkTokens)
+    .set({ isConsumed: true })
+    .where(and(eq(magicLinkTokens.userId, userId), eq(magicLinkTokens.isConsumed, false)));
+}
+
+export async function createLoginToken(
+  userId: string,
+  email: string,
+  tokenHash: string,
+  expiresAt: Date,
+  ipAddress: string | null
+) {
+  await db.insert(magicLinkTokens).values({ userId, email, tokenHash, expiresAt, ipAddress: ipAddress ?? undefined });
 }

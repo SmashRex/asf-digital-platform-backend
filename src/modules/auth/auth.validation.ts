@@ -5,14 +5,9 @@ export const registerSchema = z.object({
   name: z.string().trim().min(2, "Name is too short").max(255),
   department: z.string().trim().min(2, "Department is required").max(255),
   academicLevel: z.enum([
-    "100 Level",
-    "200 Level",
-    "300 Level",
-    "400 Level",
-    "500 Level",
-    "Postgraduate",
-    "Alumni",
+    "100 Level", "200 Level", "300 Level", "400 Level", "500 Level", "Postgraduate", "Alumni",
   ]),
+  programDurationYears: z.union([z.literal(4), z.literal(5)]).default(4),
   phoneNumber: z.string().trim().max(50).optional(),
   subgroup: z.string().trim().max(100).optional(),
 });
@@ -24,3 +19,9 @@ export const verifyTokenSchema = z.object({
 });
 
 export type VerifyTokenInput = z.infer<typeof verifyTokenSchema>;
+
+export const magicLinkRequestSchema = z.object({
+  email: z.string().trim().toLowerCase().email("Invalid email address"),
+});
+
+export type MagicLinkRequestInput = z.infer<typeof magicLinkRequestSchema>;

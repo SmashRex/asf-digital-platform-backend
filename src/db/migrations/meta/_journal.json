@@ -15,6 +15,13 @@
       "when": 1788824430264,
       "tag": "0001_next_doctor_doom",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788831400059,
+      "tag": "0002_dapper_stryfe",
+      "breakpoints": true
     }
   ]
 }

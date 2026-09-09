@@ -86,3 +86,31 @@ export async function verifyMagicLink(
 export async function revokeSession(sessionId: string) {
   await authRepository.revokeSessionById(sessionId);
 }
+
+export async function requestMagicLink(email: string, ipAddress: string | null) {
+  const user = await authRepository.findActiveUserByEmail(email);
+
+  // Deliberately identical behavior whether or not the user exists —
+  // this function returns void either way, and the controller sends
+  // one generic message regardless of what happened here.
+  if (!user) {
+    return;
+  }
+
+  await authRepository.invalidateUnconsumedTokens(user.id);
+
+  const rawToken = generateRawToken();
+  const tokenHash = hashToken(rawToken);
+  const expiresAt = new Date(Date.now() + appConfig.auth.magicLinkTtlMinutes * 60 * 1000);
+
+  await authRepository.createLoginToken(user.id, user.email, tokenHash, expiresAt, ipAddress);
+
+  const magicLinkUrl = `${env.FRONTEND_URL}/auth/verify?token=${rawToken}`;
+
+  await mailer.sendMagicLinkEmail({
+    to: user.email,
+    name: user.name,
+    magicLinkUrl,
+    purpose: "login",
+  });
+}
