@@ -7,6 +7,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
 import { academicSessionRouter } from "./modules/academic-session/academicSession.routes.js";
 import { membersRouter } from "./modules/members/members.routes.js";
+import { usersRouter } from "./modules/users/users.routes.js";
 
 
 
@@ -28,7 +29,7 @@ app.use(express.json());
 app.use("/api/auth", authRouter);
 app.use("/api/academic-sessions", academicSessionRouter);
 app.use("/api/members", membersRouter);
-
+app.use("/api/users", usersRouter);
 
 //should be the last app.use
 app.use(errorHandler);

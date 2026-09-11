@@ -25,3 +25,4 @@ export const magicLinkRequestSchema = z.object({
 });
 
 export type MagicLinkRequestInput = z.infer<typeof magicLinkRequestSchema>;
+
