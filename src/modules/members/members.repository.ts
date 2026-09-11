@@ -60,7 +60,7 @@ export async function findUserByIdTx(tx: Transaction, userId: string) {
 export async function listMembers(query: ListMembersQuery) {
   const offset = (query.page - 1) * query.limit;
 
-  const conditions = [neOp(users.accountStatus, "Deactivated")];
+  const conditions = [ne(users.accountStatus, "Deactivated")];
   if (query.search) {
     conditions.push(
       or(ilike(users.name, `%${query.search}%`), ilike(users.department, `%${query.search}%`))!

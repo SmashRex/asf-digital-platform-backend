@@ -62,3 +62,7 @@ export async function recordHistory(
     progressionStatus: status,
   });
 }
+
+export async function findActiveSession() {
+  return db.query.academicSessions.findFirst({ where: eq(academicSessions.isActive, true) });
+}

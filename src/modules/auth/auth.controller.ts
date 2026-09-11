@@ -42,12 +42,12 @@ export async function verify(req: Request, res: Response, next: NextFunction) {
     );
 
     res.cookie("asf_session", rawSessionToken, {
-      httpOnly: true,
-      secure: env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: appConfig.auth.sessionTtlDays * 24 * 60 * 60 * 1000,
-      path: "/",
-    });
+  httpOnly: true,
+  secure: env.NODE_ENV === "production",
+  sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+  maxAge: appConfig.auth.sessionTtlDays * 24 * 60 * 60 * 1000,
+  path: "/",
+});
 
     return sendSuccess(res, {
       id: user.id,
@@ -76,7 +76,12 @@ export async function logout(req: Request, res: Response, next: NextFunction) {
     if (req.sessionId) {
       await revokeSession(req.sessionId);
     }
-    res.clearCookie("asf_session", { path: "/" });
+    res.clearCookie("asf_session", {
+  path: "/",
+  httpOnly: true,
+  secure: env.NODE_ENV === "production",
+  sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+});
     return sendSuccess(res, null, "Logged out successfully");
   } catch (err) {
     next(err);

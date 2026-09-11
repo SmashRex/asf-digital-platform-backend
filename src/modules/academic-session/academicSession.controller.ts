@@ -29,8 +29,20 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 
 export async function activateAndProgressHandler(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await activateAndProgress(req.params.id);
+    const result = await activateAndProgress(req.params.id as string);
     return sendSuccess(res, result, "Session activated and students progressed successfully");
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getActive(req: Request, res: Response, next: NextFunction) {
+  try {
+    const session = await repo.findActiveSession();
+    if (!session) {
+      throw AppError.notFound("No active academic session is configured", "NO_ACTIVE_SESSION");
+    }
+    return sendSuccess(res, session);
   } catch (err) {
     next(err);
   }

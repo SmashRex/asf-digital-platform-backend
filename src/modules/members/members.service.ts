@@ -2,7 +2,22 @@ import { db } from "../../db/index.js";
 import { AppError } from "../../errors/appError.js";
 import * as repo from "./members.repository.js";
 import type { AcademicLevelOverrideInput, ListMembersQuery, UpdateRoleInput, UpdateStatusInput } from "./members.validation.js";
+import { users } from "../../db/schema/index.js";
 
+
+function toMemberView(user: typeof users.$inferSelect, canViewPrivate: boolean): PublicMemberView | PrivateMemberView {
+  const base: PublicMemberView = {
+    id: user.id,
+    name: user.name,
+    department: user.department,
+    academicLevel: user.academicLevel,
+    subgroup: user.subgroup,
+    membershipStatus: user.membershipStatus,
+    avatarUrl: user.avatarUrl,
+  };
+  if (!canViewPrivate) return base;
+  return { ...base, email: user.email, phoneNumber: user.phoneNumber, accountStatus: user.accountStatus };
+}
 
 export async function overrideAcademicLevel(
   targetUserId: string,
@@ -53,34 +68,19 @@ export interface PrivateMemberView extends PublicMemberView {
   accountStatus: string;
 }
 
+
 export async function getMemberDirectory(query: ListMembersQuery, canViewPrivate: boolean) {
   const { rows, total } = await repo.listMembers(query);
-
-  const data = rows.map((user) => {
-    const base: PublicMemberView = {
-      id: user.id,
-      name: user.name,
-      department: user.department,
-      academicLevel: user.academicLevel,
-      subgroup: user.subgroup,
-      membershipStatus: user.membershipStatus,
-      avatarUrl: user.avatarUrl,
-    };
-
-    if (!canViewPrivate) return base;
-
-    const withPrivate: PrivateMemberView = {
-      ...base,
-      email: user.email,
-      phoneNumber: user.phoneNumber,
-      accountStatus: user.accountStatus,
-    };
-    return withPrivate;
-  });
-
-  return { data, total };
+  return { data: rows.map((u) => toMemberView(u, canViewPrivate)), total };
 }
 
+export async function getMemberById(id: string, canViewPrivate: boolean) {
+  const user = await repo.findUserById(id);
+  if (!user) {
+    throw AppError.notFound("Member not found", "MEMBER_NOT_FOUND");
+  }
+  return toMemberView(user, canViewPrivate);
+}
 export async function updateMemberRole(targetUserId: string, input: UpdateRoleInput, actingUserId: string) {
   const targetUser = await repo.findUserById(targetUserId);
   if (!targetUser) {

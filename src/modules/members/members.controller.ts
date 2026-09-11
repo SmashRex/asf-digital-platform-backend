@@ -4,7 +4,7 @@ import { overrideAcademicLevel } from "./members.service.js";
 import { sendSuccess } from "../../utils/apiResponse.js";
 import { AppError } from "../../errors/appError.js";
 import { updateRoleSchema, updateStatusSchema } from "./members.validation.js";
-import { updateMemberRole, updateMemberStatus } from "./members.service.js";
+import { updateMemberRole, updateMemberStatus, getMemberById } from "./members.service.js";
 
 
 export async function overrideLevel(req: Request, res: Response, next: NextFunction) {
@@ -72,6 +72,18 @@ export async function updateStatus(req: Request, res: Response, next: NextFuncti
     
     const updated = await updateMemberStatus(req.params.id as string, parsed.data, req.user!.id);
     return sendSuccess(res, updated, "Account status updated successfully");
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getById(req: Request, res: Response, next: NextFunction) {
+  try {
+    const canViewPrivate = req.user!.roles.some((role) =>
+      (permissions["members.view_private"] as readonly string[]).includes(role)
+    );
+    const member = await getMemberById(req.params.id as string, canViewPrivate);
+    return sendSuccess(res, member);
   } catch (err) {
     next(err);
   }
