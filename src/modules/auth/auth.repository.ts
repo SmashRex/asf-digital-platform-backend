@@ -28,16 +28,17 @@ export async function createUserWithRegistration(
     const [user] = await tx
       .insert(users)
       .values({
-  email: input.email,
-  name: input.name,
-  department: input.department,
-  academicLevel: input.academicLevel,
-  programDurationYears: input.programDurationYears,
-  phoneNumber: input.phoneNumber,
-  subgroup: input.subgroup,
-  accountStatus: "Active",
-  membershipStatus: input.academicLevel === "Alumni" ? "Alumni" : "Active Student",
-})
+        email: input.email,
+        name: input.name,
+        department: input.department,
+        academicLevel: input.academicLevel,
+        programDurationYears: input.programDurationYears,
+        phoneNumber: input.phoneNumber,
+        subgroup: input.subgroup,
+        accountStatus: "Active",
+        membershipStatus: input.academicLevel === "Alumni" ? "Alumni" : "Active Student",
+        passwordHash: (input as any).passwordHash,
+      })
       .returning();
 
     await tx.insert(userRoles).values({
