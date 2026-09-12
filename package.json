@@ -4,20 +4,21 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-  "dev": "tsx watch server.ts",
-  "build": "esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
-  "start": "node dist/server.cjs",
-  "db:generate": "drizzle-kit generate",
-  "db:migrate": "drizzle-kit migrate",
-  "db:studio": "drizzle-kit studio",
-  "db:seed:roles": "tsx src/db/seeds/rolesSeed.ts",
-  "db:seed:session": "tsx src/db/seeds/academicSessionSeed.ts"
-},
+    "dev": "tsx watch server.ts",
+    "build": "esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "start": "node dist/server.cjs",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "db:seed:roles": "tsx src/db/seeds/rolesSeed.ts",
+    "db:seed:session": "tsx src/db/seeds/academicSessionSeed.ts"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -29,6 +30,7 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",

@@ -6,6 +6,10 @@ import { AppError } from "../../errors/appError.js";
 import { appConfig } from "../../config/app.config.js";
 import { env } from "../../config/env.config.js";
 import { revokeSession } from "./auth.service.js";
+import { loginSchema } from "./auth.validation.js";
+import { loginWithPassword } from "./auth.service.js";
+import { appConfig } from "../../config/app.config.js";
+
 
 export async function register(req: Request, res: Response, next: NextFunction) {
   try {
@@ -13,13 +17,11 @@ export async function register(req: Request, res: Response, next: NextFunction) 
     if (!parsed.success) {
       throw AppError.badRequest("Invalid registration data", "VALIDATION_ERROR", parsed.error.flatten().fieldErrors);
     }
-
-    const user = await registerUser(parsed.data, req.ip ?? null);
-
+    const { user, devMagicLinkUrl } = await registerUser(parsed.data, req.ip ?? null);
     return sendSuccess(
       res,
-      { id: user.id, email: user.email, name: user.name },
-      "Registration successful. Check your email for a sign-in link.",
+      { id: user.id, email: user.email, name: user.name, ...(devMagicLinkUrl ? { devMagicLinkUrl } : {}) },
+      "Registration successful.",
       undefined,
       201
     );
@@ -101,6 +103,38 @@ export async function requestLogin(req: Request, res: Response, next: NextFuncti
     await requestMagicLink(parsed.data.email, req.ip ?? null);
 
     return sendSuccess(res, null, "If an account exists, a sign-in link has been sent");
+  } catch (err) {
+    next(err);
+  }
+}
+
+
+export async function login(req: Request, res: Response, next: NextFunction) {
+  try {
+    const parsed = loginSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw AppError.badRequest("Invalid login data", "VALIDATION_ERROR", parsed.error.flatten().fieldErrors);
+    }
+
+    const { user, roles, rawSessionToken, sessionExpiresAt } = await loginWithPassword(
+      parsed.data.email,
+      parsed.data.password,
+      req.ip ?? null,
+      req.headers["user-agent"] ?? null
+    );
+
+    res.cookie("asf_session", rawSessionToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: appConfig.auth.sessionTtlDays * 24 * 60 * 60 * 1000,
+      path: "/",
+    });
+
+    return sendSuccess(res, {
+      id: user.id, email: user.email, name: user.name, department: user.department,
+      academicLevel: user.academicLevel, subgroup: user.subgroup, roles,
+    });
   } catch (err) {
     next(err);
   }

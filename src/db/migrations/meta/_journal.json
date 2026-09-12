@@ -22,6 +22,13 @@
       "when": 1788831400059,
       "tag": "0002_dapper_stryfe",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789191838064,
+      "tag": "0003_known_skreet",
+      "breakpoints": true
     }
   ]
 }

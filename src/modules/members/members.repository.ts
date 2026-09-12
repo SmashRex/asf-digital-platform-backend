@@ -115,3 +115,7 @@ export async function updateAccountStatus(userId: string, accountStatus: string)
 export async function revokeAllUserSessions(userId: string) {
   await db.update(userSessions).set({ isRevoked: true }).where(eq(userSessions.userId, userId));
 }
+
+export async function setPasswordHash(userId: string, passwordHash: string) {
+  await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, userId));
+}

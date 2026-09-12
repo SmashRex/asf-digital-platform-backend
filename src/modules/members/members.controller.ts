@@ -5,7 +5,21 @@ import { sendSuccess } from "../../utils/apiResponse.js";
 import { AppError } from "../../errors/appError.js";
 import { updateRoleSchema, updateStatusSchema } from "./members.validation.js";
 import { updateMemberRole, updateMemberStatus, getMemberById } from "./members.service.js";
+import { resetPasswordSchema } from "./members.validation.js";
+import { adminResetPassword } from "./members.service.js";
 
+export async function resetPassword(req: Request, res: Response, next: NextFunction) {
+  try {
+    const parsed = resetPasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw AppError.badRequest("Invalid password", "VALIDATION_ERROR", parsed.error.flatten().fieldErrors);
+    }
+    await adminResetPassword(req.params.id as string, parsed.data.newPassword);
+    return sendSuccess(res, null, "Password reset successfully");
+  } catch (err) {
+    next(err);
+  }
+}
 
 export async function overrideLevel(req: Request, res: Response, next: NextFunction) {
   try {

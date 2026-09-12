@@ -15,6 +15,7 @@ export const users = pgTable(
     accountStatus: varchar("account_status", { length: 50 }).notNull().default("Active"),
     membershipStatus: varchar("membership_status", { length: 50 }).notNull().default("Active Student"),
     avatarUrl: text("avatar_url"),
+    passwordHash: text("password_hash"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

@@ -174,3 +174,11 @@ export async function createLoginToken(
 ) {
   await db.insert(magicLinkTokens).values({ userId, email, tokenHash, expiresAt, ipAddress: ipAddress ?? undefined });
 }
+
+export async function setPasswordHash(userId: string, passwordHash: string) {
+  await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+}
+
+export async function findUserByEmailWithPassword(email: string) {
+  return db.query.users.findFirst({ where: sql`lower(${users.email}) = ${email}` });
+}

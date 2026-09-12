@@ -10,3 +10,4 @@ membersRouter.get("/", requireAuth, requirePermission("members.view_directory"),
 membersRouter.patch("/:id/role", requireAuth, requirePermission("members.edit_role"), updateRole);
 membersRouter.patch("/:id/status", requireAuth, requirePermission("members.edit_status"), updateStatus);
 membersRouter.get("/:id", requireAuth, requirePermission("members.view_directory"), getById);
+membersRouter.patch("/:id/reset-password", requireAuth, requirePermission("members.edit_status"), resetPassword);

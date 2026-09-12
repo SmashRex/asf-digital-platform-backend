@@ -6,6 +6,8 @@ import { mailer } from "../../adapters/mailer/index.js";
 import * as authRepository from "./auth.repository.js";
 import type { RegisterInput } from "./auth.validation.js";
 import { db } from "../../db/index.js";
+import { hashPassword, verifyPassword } from "../../utils/password.js";
+
 
 
 export async function registerUser(input: RegisterInput, ipAddress: string | null) {
@@ -113,4 +115,63 @@ export async function requestMagicLink(email: string, ipAddress: string | null) 
     magicLinkUrl,
     purpose: "login",
   });
+}
+
+
+export async function registerUser(input: RegisterInput, ipAddress: string | null) {
+  const existingUser = await authRepository.findUserByEmail(input.email);
+  if (existingUser) {
+    throw AppError.conflict("Email is already registered", "EMAIL_ALREADY_REGISTERED");
+  }
+
+  const activeSession = await authRepository.getActiveAcademicSession();
+  if (!activeSession) {
+    throw AppError.internal("No active academic session is configured", "NO_ACTIVE_SESSION");
+  }
+
+  const passwordHash = await hashPassword(input.password);
+
+  const rawToken = generateRawToken();
+  const tokenHash = hashToken(rawToken);
+  const expiresAt = new Date(Date.now() + appConfig.auth.magicLinkTtlMinutes * 60 * 1000);
+
+  const user = await authRepository.createUserWithRegistration(
+    { ...input, passwordHash } as any,
+    activeSession.id,
+    tokenHash,
+    expiresAt,
+    ipAddress
+  );
+
+  const magicLinkUrl = `${env.FRONTEND_URL}/auth/verify?token=${rawToken}`;
+  await mailer.sendMagicLinkEmail({ to: user.email, name: user.name, magicLinkUrl, purpose: "register" });
+
+  return { user, devMagicLinkUrl: env.NODE_ENV !== "production" ? magicLinkUrl : undefined };
+}
+
+export async function loginWithPassword(email: string, password: string, ipAddress: string | null, deviceInfo: string | null) {
+  const user = await authRepository.findUserByEmail(email);
+
+  if (!user || !user.passwordHash) {
+    throw AppError.unauthorized("Invalid email or password", "INVALID_CREDENTIALS");
+  }
+
+  const isValid = await verifyPassword(password, user.passwordHash);
+  if (!isValid) {
+    throw AppError.unauthorized("Invalid email or password", "INVALID_CREDENTIALS");
+  }
+
+  if (user.accountStatus !== "Active") {
+    throw AppError.forbidden("Account is not active", "ACCOUNT_NOT_ACTIVE");
+  }
+
+  const rawSessionToken = generateRawToken();
+  const sessionTokenHash = hashToken(rawSessionToken);
+  const sessionExpiresAt = new Date(Date.now() + appConfig.auth.sessionTtlDays * 24 * 60 * 60 * 1000);
+
+  await authRepository.createSession(db, user.id, sessionTokenHash, sessionExpiresAt, deviceInfo, ipAddress);
+
+  const roles = await authRepository.getUserRolesByUserId(user.id);
+
+  return { user, roles, rawSessionToken, sessionExpiresAt };
 }
