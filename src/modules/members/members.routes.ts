@@ -1,7 +1,9 @@
 import { Router } from "express";
 import { requireAuth } from "../../middleware/requireAuth.js";
 import { requirePermission } from "../../middleware/requirePermission.js";
-import { overrideLevel, list,updateRole, updateStatus,getById } from "./members.controller.js";
+import { overrideLevel, list,updateRole, updateStatus,getById, resetPassword } from "./members.controller.js";
+    
+
 
 export const membersRouter = Router();
 

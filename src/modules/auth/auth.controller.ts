@@ -8,7 +8,6 @@ import { env } from "../../config/env.config.js";
 import { revokeSession } from "./auth.service.js";
 import { loginSchema } from "./auth.validation.js";
 import { loginWithPassword } from "./auth.service.js";
-import { appConfig } from "../../config/app.config.js";
 
 
 export async function register(req: Request, res: Response, next: NextFunction) {

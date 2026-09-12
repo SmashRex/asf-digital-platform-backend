@@ -3,6 +3,8 @@ import { AppError } from "../../errors/appError.js";
 import * as repo from "./members.repository.js";
 import type { AcademicLevelOverrideInput, ListMembersQuery, UpdateRoleInput, UpdateStatusInput } from "./members.validation.js";
 import { users } from "../../db/schema/index.js";
+import { hashPassword } from "../../utils/password.js";
+
 
 
 function toMemberView(user: typeof users.$inferSelect, canViewPrivate: boolean): PublicMemberView | PrivateMemberView {
@@ -121,4 +123,12 @@ export async function updateMemberStatus(targetUserId: string, input: UpdateStat
   }
 
   return updated;
+}
+export async function adminResetPassword(targetUserId: string, newPassword: string) {
+  const targetUser = await repo.findUserById(targetUserId);
+  if (!targetUser) {
+    throw AppError.notFound("Member not found", "MEMBER_NOT_FOUND");
+  }
+  const passwordHash = await hashPassword(newPassword);
+  await repo.setPasswordHash(targetUserId, passwordHash);
 }

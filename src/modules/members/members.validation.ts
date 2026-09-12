@@ -29,3 +29,7 @@ export const updateStatusSchema = z.object({
 
 export type UpdateRoleInput = z.infer<typeof updateRoleSchema>;
 export type UpdateStatusInput = z.infer<typeof updateStatusSchema>;
+
+export const resetPasswordSchema = z.object({
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+});

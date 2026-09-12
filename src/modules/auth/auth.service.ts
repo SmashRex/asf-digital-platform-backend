@@ -9,43 +9,6 @@ import { db } from "../../db/index.js";
 import { hashPassword, verifyPassword } from "../../utils/password.js";
 
 
-
-export async function registerUser(input: RegisterInput, ipAddress: string | null) {
-  const existingUser = await authRepository.findUserByEmail(input.email);
-  if (existingUser) {
-    throw AppError.conflict("Email is already registered", "EMAIL_ALREADY_REGISTERED");
-  }
-
-  const activeSession = await authRepository.getActiveAcademicSession();
-  if (!activeSession) {
-    // A missing active session is a system configuration problem, not the user's fault
-    throw AppError.internal("No active academic session is configured", "NO_ACTIVE_SESSION");
-  }
-
-  const rawToken = generateRawToken();
-  const tokenHash = hashToken(rawToken);
-  const expiresAt = new Date(Date.now() + appConfig.auth.magicLinkTtlMinutes * 60 * 1000);
-
-  const user = await authRepository.createUserWithRegistration(
-    input,
-    activeSession.id,
-    tokenHash,
-    expiresAt,
-    ipAddress
-  );
-
-  const magicLinkUrl = `${env.FRONTEND_URL}/auth/verify?token=${rawToken}`;
-
-  await mailer.sendMagicLinkEmail({
-    to: user.email,
-    name: user.name,
-    magicLinkUrl,
-    purpose: "register",
-  });
-
-  return user;
-}
-
 export async function verifyMagicLink(
   rawToken: string,
   ipAddress: string | null,
