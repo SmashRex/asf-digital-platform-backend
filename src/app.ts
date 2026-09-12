@@ -8,6 +8,9 @@ import { authRouter } from "./modules/auth/auth.routes.js";
 import { academicSessionRouter } from "./modules/academic-session/academicSession.routes.js";
 import { membersRouter } from "./modules/members/members.routes.js";
 import { usersRouter } from "./modules/users/users.routes.js";
+import { bibleRouter } from "./modules/bible/bible.routes.js";
+
+
 
 
 
@@ -30,6 +33,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/academic-sessions", academicSessionRouter);
 app.use("/api/members", membersRouter);
 app.use("/api/users", usersRouter);
+app.use("/api/bible", bibleRouter);
 
 //should be the last app.use
 app.use(errorHandler);
