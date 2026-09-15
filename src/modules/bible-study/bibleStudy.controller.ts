@@ -27,15 +27,7 @@ function hasPermission(req: Request, key: keyof typeof permissions): boolean {
   return req.user!.roles.some((role) => (permissions[key] as readonly string[]).includes(role));
 }
 
-export async function list(req: Request, res: Response, next: NextFunction) {
-  try {
-    const canSeeUnpublished = hasPermission(req, "bible_study.create");
-    const studies = await service.getStudies(canSeeUnpublished);
-    return sendSuccess(res, studies);
-  } catch (err) {
-    next(err);
-  }
-}
+
 
 export async function current(req: Request, res: Response, next: NextFunction) {
   try {
@@ -47,15 +39,6 @@ export async function current(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-export async function getById(req: Request, res: Response, next: NextFunction) {
-  try {
-    const canSeeUnpublished = hasPermission(req, "bible_study.create");
-    const study = await service.getStudyById(req.params.id as string, canSeeUnpublished);
-    return sendSuccess(res, study);
-  } catch (err) {
-    next(err);
-  }
-}
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
@@ -131,6 +114,28 @@ export async function uploadOutline(req: Request, res: Response, next: NextFunct
       },
       `Detected ${studies.length} ${studies.length === 1 ? "study" : "studies"} in this document. Review and correct each before saving.`
     );
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function list(req: Request, res: Response, next: NextFunction) {
+  try {
+    const canSeeUnpublished = hasPermission(req, "bible_study.create");
+    const studies = await service.getStudies(canSeeUnpublished);
+    res.set("Cache-Control", canSeeUnpublished ? "private, no-store" : "public, max-age=300");
+    return sendSuccess(res, studies);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getById(req: Request, res: Response, next: NextFunction) {
+  try {
+    const canSeeUnpublished = hasPermission(req, "bible_study.create");
+    const study = await service.getStudyById(req.params.id as string, canSeeUnpublished);
+    res.set("Cache-Control", study.publicationStatus === "published" ? "public, max-age=3600" : "private, no-store");
+    return sendSuccess(res, study);
   } catch (err) {
     next(err);
   }
