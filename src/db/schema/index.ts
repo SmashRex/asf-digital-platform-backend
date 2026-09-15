@@ -9,3 +9,5 @@ export * from "./bible.js";
 export * from "./bibleStudy.js";
 export * from "./outlineAliases.js";
 export * from "./bibleBookAliases.js";
+export * from "./mediaAssets.js";
+export * from "./mediaPlacements.js";

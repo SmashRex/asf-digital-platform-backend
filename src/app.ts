@@ -10,6 +10,7 @@ import { membersRouter } from "./modules/members/members.routes.js";
 import { usersRouter } from "./modules/users/users.routes.js";
 import { bibleRouter } from "./modules/bible/bible.routes.js";
 import { bibleStudyRouter } from "./modules/bible-study/bibleStudy.routes.js";
+import { mediaRouter } from "./modules/media/media.routes.js";
 
 
 
@@ -37,6 +38,7 @@ app.use("/api/members", membersRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/bible", bibleRouter);
 app.use("/api/bible-study", bibleStudyRouter);
+app.use("/api/media", mediaRouter);
 
 //should be the last app.use
 app.use(errorHandler);

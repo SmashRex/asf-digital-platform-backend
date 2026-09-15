@@ -15,6 +15,9 @@ const envSchema = z.object({
 
   MEDIA_STORAGE_KEY: z.string().optional(),
   MEDIA_STORAGE_SECRET: z.string().optional(),
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
 
   COOKIE_SECRET: z.string().min(16, "COOKIE_SECRET must be at least 16 characters"),
 });

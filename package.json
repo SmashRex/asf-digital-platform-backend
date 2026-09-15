@@ -13,7 +13,7 @@
     "db:seed:roles": "tsx src/db/seeds/rolesSeed.ts",
     "db:seed:session": "tsx src/db/seeds/academicSessionSeed.ts",
     "db:seed:aliases": "tsx src/db/seeds/outlineAliasesSeed.ts",
-"db:seed:bookaliases": "tsx src/db/seeds/bibleBookAliasesSeed.ts"
+    "db:seed:bookaliases": "tsx src/db/seeds/bibleBookAliasesSeed.ts"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +21,7 @@
   "type": "commonjs",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cloudinary": "^2.11.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
