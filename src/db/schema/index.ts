@@ -6,3 +6,6 @@ export * from "./userSessions.js";
 export * from "./academicSessions.js";
 export * from "./userAcademicHistory.js";
 export * from "./bible.js";
+export * from "./bibleStudy.js";
+export * from "./outlineAliases.js";
+export * from "./bibleBookAliases.js";

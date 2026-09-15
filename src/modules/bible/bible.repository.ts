@@ -18,17 +18,28 @@ export async function findBook(bookId: string) {
   return db.query.bibleBooks.findFirst({ where: eq(bibleBooks.id, bookId) });
 }
 
-export async function getChapter(translationId: string, bookId: string, chapter: number) {
+export async function getChapter(
+  translationId: string,
+  bookId: string,
+  chapter: number,
+  verseStart?: number,
+  verseEnd?: number
+) {
+  const conditions = [
+    eq(bibleVerses.translationId, translationId),
+    eq(bibleVerses.bookId, bookId),
+    eq(bibleVerses.chapter, chapter),
+  ];
+
+  if (verseStart !== undefined) {
+    conditions.push(sql`${bibleVerses.verse} >= ${verseStart}`);
+    conditions.push(sql`${bibleVerses.verse} <= ${verseEnd ?? verseStart}`);
+  }
+
   return db
     .select({ verse: bibleVerses.verse, text: bibleVerses.text })
     .from(bibleVerses)
-    .where(
-      and(
-        eq(bibleVerses.translationId, translationId),
-        eq(bibleVerses.bookId, bookId),
-        eq(bibleVerses.chapter, chapter)
-      )
-    )
+    .where(and(...conditions))
     .orderBy(bibleVerses.verse);
 }
 

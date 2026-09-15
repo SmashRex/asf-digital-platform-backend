@@ -15,7 +15,7 @@ function main() {
 
   console.log("Detecting format and parsing...");
   const verses = parseBibleFile(data);
-  console.log(`Parsed ${verses.length} total verses.\n`);
+  console.log(`✅ Parsed ${verses.length} total verses.\n`);
 
   const referenceChecks = [
     { book: "John", chapter: 3, verse: 3 },
@@ -24,7 +24,7 @@ function main() {
     { book: "Psalm", chapter: 23, verse: 1 }, // note: some files say "Psalm", others "Psalms" — informational only
   ];
 
-  console.log("Spot-check these against a known copy of the translation before importing:\n");
+  console.log("📖 Spot-check these against a known copy of the translation before importing:\n");
 
   for (const ref of referenceChecks) {
     const match = verses.find(
@@ -40,7 +40,7 @@ function main() {
     }
   }
 
-  console.log("Compare the wording above against a source you trust (biblegateway.com, biblehub.com, etc.)");
+  console.log("⚠️  Compare the wording above against a source you trust (biblegateway.com, biblehub.com, etc.)");
   console.log("    for the translation you THINK this file is, before running bibleSeed.ts with any translation ID.");
 }
 

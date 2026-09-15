@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { chapterParamsSchema, searchQuerySchema } from "./bible.validation.js";
+import { chapterParamsSchema, chapterQuerySchema, searchQuerySchema } from "./bible.validation.js";
 import { getChapterContent, searchBible } from "./bible.service.js";
 import * as repo from "./bible.repository.js";
 import { sendSuccess } from "../../utils/apiResponse.js";
@@ -25,18 +25,30 @@ export async function listBooks(req: Request, res: Response, next: NextFunction)
 
 export async function getChapter(req: Request, res: Response, next: NextFunction) {
   try {
-    const parsed = chapterParamsSchema.safeParse(req.params);
-    if (!parsed.success) {
-      throw AppError.badRequest("Invalid chapter request", "VALIDATION_ERROR", parsed.error.flatten().fieldErrors);
+    const parsedParams = chapterParamsSchema.safeParse(req.params);
+    if (!parsedParams.success) {
+      throw AppError.badRequest("Invalid chapter request", "VALIDATION_ERROR", parsedParams.error.flatten().fieldErrors);
     }
-    const result = await getChapterContent(parsed.data.translationId, parsed.data.bookId, parsed.data.chapter);
+    const parsedQuery = chapterQuerySchema.safeParse(req.query);
+    if (!parsedQuery.success) {
+      throw AppError.badRequest("Invalid verse range", "VALIDATION_ERROR", parsedQuery.error.flatten().fieldErrors);
+    }
 
-    res.set("Cache-Control", "public, max-age=86400"); // 24 hours — scripture text never changes
+    const result = await getChapterContent(
+      parsedParams.data.translationId,
+      parsedParams.data.bookId,
+      parsedParams.data.chapter,
+      parsedQuery.data.verseStart,
+      parsedQuery.data.verseEnd
+    );
+
+    res.set("Cache-Control", "public, max-age=86400");
     return sendSuccess(res, result);
   } catch (err) {
     next(err);
   }
 }
+
 export async function search(req: Request, res: Response, next: NextFunction) {
   try {
     const parsed = searchQuerySchema.safeParse(req.query);

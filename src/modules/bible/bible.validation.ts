@@ -6,6 +6,11 @@ export const chapterParamsSchema = z.object({
   chapter: z.coerce.number().int().min(1),
 });
 
+export const chapterQuerySchema = z.object({
+  verseStart: z.coerce.number().int().min(1).optional(),
+  verseEnd: z.coerce.number().int().min(1).optional(),
+});
+
 export const searchQuerySchema = z.object({
   q: z.string().trim().min(2, "Search query must be at least 2 characters"),
   translationId: z.string().trim().min(1),

@@ -1,7 +1,13 @@
 import { AppError } from "../../errors/appError.js";
 import * as repo from "./bible.repository.js";
 
-export async function getChapterContent(translationId: string, bookId: string, chapter: number) {
+export async function getChapterContent(
+  translationId: string,
+  bookId: string,
+  chapter: number,
+  verseStart?: number,
+  verseEnd?: number
+) {
   const translation = await repo.findTranslation(translationId);
   if (!translation) {
     throw AppError.notFound("Translation not found", "TRANSLATION_NOT_FOUND");
@@ -21,9 +27,12 @@ export async function getChapterContent(translationId: string, bookId: string, c
     throw AppError.badRequest(`${book.name} only has ${book.chapterCount} chapters`, "INVALID_CHAPTER");
   }
 
-  const verses = await repo.getChapter(translationId, bookId, chapter);
+  const verses = await repo.getChapter(translationId, bookId, chapter, verseStart, verseEnd);
   if (verses.length === 0) {
-    throw AppError.notFound("No verses found for this chapter in this translation", "CHAPTER_NOT_FOUND");
+    throw AppError.notFound(
+      verseStart ? "No verses found for this reference" : "No verses found for this chapter in this translation",
+      verseStart ? "VERSE_NOT_FOUND" : "CHAPTER_NOT_FOUND"
+    );
   }
 
   return { translation: translation.name, book: book.name, chapter, verses };
