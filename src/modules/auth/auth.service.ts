@@ -109,7 +109,19 @@ export async function registerUser(input: RegisterInput, ipAddress: string | nul
   const magicLinkUrl = `${env.FRONTEND_URL}/auth/verify?token=${rawToken}`;
   await mailer.sendMagicLinkEmail({ to: user.email, name: user.name, magicLinkUrl, purpose: "register" });
 
-  return { user, devMagicLinkUrl: env.NODE_ENV !== "production" ? magicLinkUrl : undefined };
+  // Auto-login: issue a real session immediately, same mechanism as login/verify
+  const rawSessionToken = generateRawToken();
+  const sessionTokenHash = hashToken(rawSessionToken);
+  const sessionExpiresAt = new Date(Date.now() + appConfig.auth.sessionTtlDays * 24 * 60 * 60 * 1000);
+  await authRepository.createSession(db, user.id, sessionTokenHash, sessionExpiresAt, null, ipAddress);
+
+  return {
+    user,
+    roles: ["Member"],
+    rawSessionToken,
+    sessionExpiresAt,
+    devMagicLinkUrl: env.NODE_ENV !== "production" ? magicLinkUrl : undefined,
+  };
 }
 
 export async function loginWithPassword(email: string, password: string, ipAddress: string | null, deviceInfo: string | null) {

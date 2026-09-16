@@ -18,7 +18,15 @@ export async function register(req: Request, res: Response, next: NextFunction) 
     if (!parsed.success) {
       throw AppError.badRequest("Invalid registration data", "VALIDATION_ERROR", parsed.error.flatten().fieldErrors);
     }
-    const { user, devMagicLinkUrl } = await registerUser(parsed.data, req.ip ?? null);
+    const { user, roles, rawSessionToken, sessionExpiresAt, devMagicLinkUrl } = await registerUser(parsed.data, req.ip ?? null);
+
+    res.cookie("asf_session", rawSessionToken, {
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: appConfig.auth.sessionTtlDays * 24 * 60 * 60 * 1000,
+      path: "/",
+    });
 
     return sendSuccess(
       res,
@@ -29,7 +37,7 @@ export async function register(req: Request, res: Response, next: NextFunction) 
         department: user.department,
         academicLevel: user.academicLevel,
         subgroup: user.subgroup,
-        roles: ["Member"],
+        roles,
         ...(devMagicLinkUrl ? { devMagicLinkUrl } : {}),
       },
       "Registration successful.",
