@@ -8,6 +8,8 @@ import { env } from "../../config/env.config.js";
 import { revokeSession } from "./auth.service.js";
 import { loginSchema } from "./auth.validation.js";
 import { loginWithPassword } from "./auth.service.js";
+import { magicLinkRequestSchema } from "./auth.validation.js";
+import { requestMagicLink } from "./auth.service.js";
 
 
 export async function register(req: Request, res: Response, next: NextFunction) {
@@ -17,9 +19,19 @@ export async function register(req: Request, res: Response, next: NextFunction) 
       throw AppError.badRequest("Invalid registration data", "VALIDATION_ERROR", parsed.error.flatten().fieldErrors);
     }
     const { user, devMagicLinkUrl } = await registerUser(parsed.data, req.ip ?? null);
+
     return sendSuccess(
       res,
-      { id: user.id, email: user.email, name: user.name, ...(devMagicLinkUrl ? { devMagicLinkUrl } : {}) },
+      {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        department: user.department,
+        academicLevel: user.academicLevel,
+        subgroup: user.subgroup,
+        roles: ["Member"],
+        ...(devMagicLinkUrl ? { devMagicLinkUrl } : {}),
+      },
       "Registration successful.",
       undefined,
       201
@@ -89,8 +101,7 @@ export async function logout(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-import { magicLinkRequestSchema } from "./auth.validation.js";
-import { requestMagicLink } from "./auth.service.js";
+
 
 export async function requestLogin(req: Request, res: Response, next: NextFunction) {
   try {
