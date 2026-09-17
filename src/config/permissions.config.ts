@@ -16,7 +16,7 @@ export const permissions = {
   "fs.admissions.review": ["VP / FS Coordinator", "President / Executive", "Technical Administrator"],
   "fs.students.grade": ["FS Teacher", "VP / FS Coordinator", "President / Executive"],
   "fs.students.record_completion": ["VP / FS Coordinator", "President / Executive"],
-  "events.create_edit": ["Publicity Coordinator", "General Secretary", "President / Executive", "Technical Administrator"],
+  "events.create_edit": ["Publicity Coordinator", "General Secretary", "Technical Administrator"],
   "announcements.publish": ["Publicity Coordinator", "General Secretary", "President / Executive", "Technical Administrator"],
   "media.upload": ["Publicity Coordinator", "President / Executive", "Technical Administrator"],
   "governance.approve": ["President / Executive"],

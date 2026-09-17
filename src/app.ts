@@ -15,7 +15,8 @@ import { fsAdmissionsRouter } from "./modules/fs/fsAdmissions.routes.js";
 import { fsClassesRouter } from "./modules/fs/fsClasses.routes.js";
 import { fsManualRouter } from "./modules/fs/fsManual.routes.js";
 import { fsStudentsRouter } from "./modules/fs/fsStudents.routes.js";
-
+import { eventsRouter } from "./modules/events/events.routes.js";
+import { announcementsRouter } from "./modules/announcements/announcements.routes.js";
 
 
 
@@ -46,7 +47,8 @@ app.use("/api/fs/admissions", fsAdmissionsRouter);
 app.use("/api/fs/classes", fsClassesRouter);
 app.use("/api/fs/manual", fsManualRouter);
 app.use("/api/fs/students", fsStudentsRouter);
-
+app.use("/api/events", eventsRouter);
+app.use("/api/announcements", announcementsRouter);
 
 
 
