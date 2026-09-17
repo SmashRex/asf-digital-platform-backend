@@ -71,6 +71,34 @@
       "when": 1789477434194,
       "tag": "0009_motionless_vapor",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789588702214,
+      "tag": "0010_cool_kang",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789589116211,
+      "tag": "0011_nebulous_george_stacy",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1789589501948,
+      "tag": "0012_rainy_colossus",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1789590131344,
+      "tag": "0013_heavy_wolfsbane",
+      "breakpoints": true
     }
   ]
 }

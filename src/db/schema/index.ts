@@ -11,3 +11,7 @@ export * from "./outlineAliases.js";
 export * from "./bibleBookAliases.js";
 export * from "./mediaAssets.js";
 export * from "./mediaPlacements.js";
+export * from "./fsClasses.js";
+export * from "./fsClassTeachers.js";
+export * from "./fsAdmissions.js";
+export * from "./fsStudents.js";
