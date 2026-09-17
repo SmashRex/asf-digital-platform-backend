@@ -21,6 +21,7 @@ export const permissions = {
   "media.upload": ["Publicity Coordinator", "President / Executive", "Technical Administrator"],
   "governance.approve": ["President / Executive"],
   "system.logs.view": ["President / Executive", "Technical Administrator"],
+  "members.edit_subgroup": ["Publicity Coordinator", "President / Executive", "Technical Administrator"],
 } as const;
 
 export type PermissionKey = keyof typeof permissions;

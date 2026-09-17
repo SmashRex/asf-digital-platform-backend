@@ -7,6 +7,10 @@ import { updateRoleSchema, updateStatusSchema } from "./members.validation.js";
 import { updateMemberRole, updateMemberStatus, getMemberById } from "./members.service.js";
 import { resetPasswordSchema } from "./members.validation.js";
 import { adminResetPassword } from "./members.service.js";
+import { listMembersQuerySchema } from "./members.validation.js";
+import { getMemberDirectory } from "./members.service.js";
+import { permissions } from "../../config/permissions.config.js";
+import { changeSubgroup } from "./members.service.js";
 
 export async function resetPassword(req: Request, res: Response, next: NextFunction) {
   try {
@@ -36,9 +40,6 @@ export async function overrideLevel(req: Request, res: Response, next: NextFunct
   }
 }
 
-import { listMembersQuerySchema } from "./members.validation.js";
-import { getMemberDirectory } from "./members.service.js";
-import { permissions } from "../../config/permissions.config.js";
 
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
@@ -98,6 +99,19 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
     );
     const member = await getMemberById(req.params.id as string, canViewPrivate);
     return sendSuccess(res, member);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateSubgroup(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { subgroup } = req.body;
+    if (!subgroup || typeof subgroup !== "string") {
+      throw AppError.badRequest("subgroup is required", "VALIDATION_ERROR");
+    }
+    const member = await changeSubgroup(req.params.id as string, subgroup);
+    return sendSuccess(res, member, "Subgroup updated");
   } catch (err) {
     next(err);
   }

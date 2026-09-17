@@ -132,3 +132,7 @@ export async function adminResetPassword(targetUserId: string, newPassword: stri
   const passwordHash = await hashPassword(newPassword);
   await repo.setPasswordHash(targetUserId, passwordHash);
 }
+
+export async function changeSubgroup(userId: string, subgroup: string) {
+  return repo.updateSubgroup(userId, subgroup);
+}

@@ -119,3 +119,12 @@ export async function revokeAllUserSessions(userId: string) {
 export async function setPasswordHash(userId: string, passwordHash: string) {
   await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, userId));
 }
+
+export async function updateSubgroup(userId: string, subgroup: string) {
+  const [row] = await db
+    .update(users)
+    .set({ subgroup, updatedAt: new Date() })
+    .where(eq(users.id, userId))
+    .returning();
+  return row;
+}

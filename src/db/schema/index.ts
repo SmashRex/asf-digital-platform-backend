@@ -15,3 +15,4 @@ export * from "./fsClasses.js";
 export * from "./fsClassTeachers.js";
 export * from "./fsAdmissions.js";
 export * from "./fsStudents.js";
+export * from "./fsManual.js";

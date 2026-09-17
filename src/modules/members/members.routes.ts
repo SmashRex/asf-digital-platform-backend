@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { requireAuth } from "../../middleware/requireAuth.js";
 import { requirePermission } from "../../middleware/requirePermission.js";
-import { overrideLevel, list,updateRole, updateStatus,getById, resetPassword } from "./members.controller.js";
+import { overrideLevel, list,updateRole, updateStatus,getById, resetPassword, updateSubgroup } from "./members.controller.js";
     
 
 
@@ -13,3 +13,4 @@ membersRouter.patch("/:id/role", requireAuth, requirePermission("members.edit_ro
 membersRouter.patch("/:id/status", requireAuth, requirePermission("members.edit_status"), updateStatus);
 membersRouter.get("/:id", requireAuth, requirePermission("members.view_directory"), getById);
 membersRouter.patch("/:id/reset-password", requireAuth, requirePermission("members.edit_status"), resetPassword);
+membersRouter.patch("/:id/subgroup", requireAuth, requirePermission("members.edit_subgroup"), updateSubgroup);

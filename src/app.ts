@@ -13,6 +13,8 @@ import { bibleStudyRouter } from "./modules/bible-study/bibleStudy.routes.js";
 import { mediaRouter } from "./modules/media/media.routes.js";
 import { fsAdmissionsRouter } from "./modules/fs/fsAdmissions.routes.js";
 import { fsClassesRouter } from "./modules/fs/fsClasses.routes.js";
+import { fsManualRouter } from "./modules/fs/fsManual.routes.js";
+import { fsStudentsRouter } from "./modules/fs/fsStudents.routes.js";
 
 
 
@@ -42,6 +44,14 @@ app.use("/api/bible-study", bibleStudyRouter);
 app.use("/api/media", mediaRouter);
 app.use("/api/fs/admissions", fsAdmissionsRouter);
 app.use("/api/fs/classes", fsClassesRouter);
+app.use("/api/fs/manual", fsManualRouter);
+app.use("/api/fs/students", fsStudentsRouter);
+
+
+
+
+
+
 
 //should be the last app.use
 app.use(errorHandler);
