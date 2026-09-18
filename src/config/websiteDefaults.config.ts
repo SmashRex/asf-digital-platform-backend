@@ -1,0 +1,58 @@
+export const defaultCopy = {
+  hero: {
+    headline: "Faith. Friends. FUTA.",
+    supportingText: "A community of students at the Federal University of Technology, Akure.",
+    primaryCtaText: "Come Along",
+    secondaryCtaText: "See This Week",
+  },
+  about: {
+    headline: "About ASF",
+    description: "The Anglican Students' Fellowship at FUTA.",
+    worshipTitle: "Worship",
+    worshipDesc: "",
+    learnTitle: "Learn",
+    learnDesc: "",
+    prayTitle: "Pray",
+    prayDesc: "",
+    lifeTitle: "Life",
+    lifeDesc: "",
+  },
+  life: {
+    heading: "Life at ASF",
+    supportingCopy: "",
+    lifeAtAsfHeading: "",
+    lifeAtAsfSubheading: "",
+  },
+  visit: {
+    headline: "Visit Us",
+    subheading: "",
+    introText: "",
+    step1Title: "",
+    step1Desc: "",
+    step2Title: "",
+    step2Desc: "",
+    step3Title: "",
+    step3Desc: "",
+    visitHeadline: "",
+    visitSubheading: "",
+    locationName: "FUTA",
+    mainGatheringName: "Sunday Service",
+    serviceTime: "8:00 AM",
+    serviceVenue: "Fellowship Hall",
+    directionsCtaText: "Get Directions",
+  },
+  cta: {
+    heading: "Join Us",
+    text: "",
+    ctaButtonText: "Come Along",
+  },
+};
+
+export const defaultSections = [
+  { sectionKey: "sec-hero", type: "hero", title: "Hero Welcome", isCore: true, order: 1 },
+  { sectionKey: "sec-about", type: "about", title: "About Fellowship", isCore: true, order: 2 },
+  { sectionKey: "sec-schedule", type: "schedule", title: "Schedule", isCore: true, order: 3 },
+  { sectionKey: "sec-life", type: "life", title: "Life at ASF", isCore: true, order: 4 },
+  { sectionKey: "sec-visit", type: "visit", title: "Visit & Details", isCore: true, order: 5 },
+  { sectionKey: "sec-cta", type: "cta", title: "Call to Action", isCore: true, order: 6 },
+];

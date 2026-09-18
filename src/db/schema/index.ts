@@ -18,3 +18,5 @@ export * from "./fsStudents.js";
 export * from "./fsManual.js";
 export * from "./events.js";
 export * from "./announcements.js";
+export * from "./websiteConfigurations.js";
+export * from "./websiteSections.js";

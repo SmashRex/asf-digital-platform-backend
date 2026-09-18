@@ -31,7 +31,6 @@ async function run() {
   const testPassword = "smoketest123";
   let sessionCookie = null;
 
-  // 1. Health check
   await check("GET /health", async () => {
     const res = await fetch(`${BASE_URL}/health`);
     const body = await res.json();
@@ -39,7 +38,6 @@ async function run() {
     assert(body.status === "ok", "expected status: ok");
   });
 
-  // 2. Register (also captures session cookie — auto-login)
   await check("POST /api/auth/register", async () => {
     const res = await fetch(`${BASE_URL}/api/auth/register`, {
       method: "POST",
@@ -59,17 +57,13 @@ async function run() {
     assert(sessionCookie, "expected Set-Cookie header on register (auto-login)");
   });
 
-  // 3. Me (using the auto-login cookie from register)
   await check("GET /api/auth/me (auto-login session)", async () => {
-    const res = await fetch(`${BASE_URL}/api/auth/me`, {
-      headers: { Cookie: sessionCookie },
-    });
+    const res = await fetch(`${BASE_URL}/api/auth/me`, { headers: { Cookie: sessionCookie } });
     const body = await res.json();
     assert(res.status === 200, `expected 200, got ${res.status}`);
     assert(body.data.email === testEmail, "expected matching email");
   });
 
-  // 4. Login (fresh, confirms password auth independently works)
   await check("POST /api/auth/login", async () => {
     const res = await fetch(`${BASE_URL}/api/auth/login`, {
       method: "POST",
@@ -81,7 +75,6 @@ async function run() {
     sessionCookie = extractCookie(res) || sessionCookie;
   });
 
-  // 5. Wrong password rejected
   await check("POST /api/auth/login (wrong password rejected)", async () => {
     const res = await fetch(`${BASE_URL}/api/auth/login`, {
       method: "POST",
@@ -93,75 +86,53 @@ async function run() {
     assert(body.error?.code === "INVALID_CREDENTIALS", "expected INVALID_CREDENTIALS");
   });
 
-  // 6. Bible translations
   await check("GET /api/bible/translations", async () => {
-    const res = await fetch(`${BASE_URL}/api/bible/translations`, {
-      headers: { Cookie: sessionCookie },
-    });
+    const res = await fetch(`${BASE_URL}/api/bible/translations`, { headers: { Cookie: sessionCookie } });
     const body = await res.json();
     assert(res.status === 200, `expected 200, got ${res.status}`);
     assert(body.data.length >= 3, `expected at least 3 translations, got ${body.data.length}`);
   });
 
-  // 7. Bible books
   await check("GET /api/bible/books", async () => {
-    const res = await fetch(`${BASE_URL}/api/bible/books`, {
-      headers: { Cookie: sessionCookie },
-    });
+    const res = await fetch(`${BASE_URL}/api/bible/books`, { headers: { Cookie: sessionCookie } });
     const body = await res.json();
     assert(res.status === 200, `expected 200, got ${res.status}`);
     assert(body.data.length === 66, `expected 66 books, got ${body.data.length}`);
   });
 
-  // 8. Bible chapter read
   await check("GET /api/bible/KJV/john/3", async () => {
-    const res = await fetch(`${BASE_URL}/api/bible/KJV/john/3`, {
-      headers: { Cookie: sessionCookie },
-    });
+    const res = await fetch(`${BASE_URL}/api/bible/KJV/john/3`, { headers: { Cookie: sessionCookie } });
     const body = await res.json();
     assert(res.status === 200, `expected 200, got ${res.status}`);
     assert(body.data.verses.length === 36, `expected 36 verses in John 3, got ${body.data.verses.length}`);
   });
 
-  // 9. Bible verse range
   await check("GET /api/bible/KJV/john/3?verseStart=16&verseEnd=18", async () => {
-    const res = await fetch(`${BASE_URL}/api/bible/KJV/john/3?verseStart=16&verseEnd=18`, {
-      headers: { Cookie: sessionCookie },
-    });
+    const res = await fetch(`${BASE_URL}/api/bible/KJV/john/3?verseStart=16&verseEnd=18`, { headers: { Cookie: sessionCookie } });
     const body = await res.json();
     assert(res.status === 200, `expected 200, got ${res.status}`);
     assert(body.data.verses.length === 3, `expected 3 verses, got ${body.data.verses.length}`);
   });
 
-  // 10. Bible search
   await check("GET /api/bible/search?q=beginning", async () => {
-    const res = await fetch(`${BASE_URL}/api/bible/search?q=beginning&translationId=KJV`, {
-      headers: { Cookie: sessionCookie },
-    });
+    const res = await fetch(`${BASE_URL}/api/bible/search?q=beginning&translationId=KJV`, { headers: { Cookie: sessionCookie } });
     const body = await res.json();
     assert(res.status === 200, `expected 200, got ${res.status}`);
     assert(body.data.length > 0, "expected at least one search result");
   });
 
-  // 11. Bible Study list (as plain member — should only see published)
   await check("GET /api/bible-study (member view)", async () => {
-    const res = await fetch(`${BASE_URL}/api/bible-study`, {
-      headers: { Cookie: sessionCookie },
-    });
+    const res = await fetch(`${BASE_URL}/api/bible-study`, { headers: { Cookie: sessionCookie } });
     const body = await res.json();
     assert(res.status === 200, `expected 200, got ${res.status}`);
     assert(Array.isArray(body.data), "expected an array");
   });
 
-  // 12. Bible Study current
   await check("GET /api/bible-study/current", async () => {
-    const res = await fetch(`${BASE_URL}/api/bible-study/current`, {
-      headers: { Cookie: sessionCookie },
-    });
+    const res = await fetch(`${BASE_URL}/api/bible-study/current`, { headers: { Cookie: sessionCookie } });
     assert(res.status === 200 || res.status === 404, `expected 200 or 404, got ${res.status}`);
   });
 
-  // 13. Media placements (public, no auth)
   await check("GET /api/media/placements (public, no auth)", async () => {
     const res = await fetch(`${BASE_URL}/api/media/placements`);
     const body = await res.json();
@@ -169,11 +140,8 @@ async function run() {
     assert(body.data.length === 11, `expected 11 placements, got ${body.data.length}`);
   });
 
-  // 14. Members directory
   await check("GET /api/members (plain Member correctly forbidden)", async () => {
-    const res = await fetch(`${BASE_URL}/api/members`, {
-      headers: { Cookie: sessionCookie },
-    });
+    const res = await fetch(`${BASE_URL}/api/members`, { headers: { Cookie: sessionCookie } });
     const body = await res.json();
     assert(res.status === 200, `expected 200, got ${res.status}: ${JSON.stringify(body)}`);
     const anyHasEmail = body.data.some((m) => "email" in m);
@@ -181,7 +149,7 @@ async function run() {
   });
 
   // ============================================================
-  // FS (Foundational School) — new tests
+  // FS (Foundational School)
   // ============================================================
 
   let adminCookie = null;
@@ -189,7 +157,6 @@ async function run() {
   let classId = null;
   let studentId = null;
 
-  // 15. Admin login (needed for all FS review/approve actions)
   await check("POST /api/auth/login (admin)", async () => {
     const res = await fetch(`${BASE_URL}/api/auth/login`, {
       method: "POST",
@@ -202,7 +169,6 @@ async function run() {
     assert(adminCookie, "expected Set-Cookie on admin login");
   });
 
-  // 16. Apply for FS (fresh smoke-test member, no subgroup, so should succeed)
   await check("POST /api/fs/admissions (apply)", async () => {
     const res = await fetch(`${BASE_URL}/api/fs/admissions`, {
       method: "POST",
@@ -215,7 +181,6 @@ async function run() {
     admissionId = body.data.id;
   });
 
-  // 17. Duplicate application rejected
   await check("POST /api/fs/admissions (duplicate rejected)", async () => {
     const res = await fetch(`${BASE_URL}/api/fs/admissions`, {
       method: "POST",
@@ -227,26 +192,19 @@ async function run() {
     assert(body.error?.code === "ADMISSION_ALREADY_PENDING", "expected ADMISSION_ALREADY_PENDING");
   });
 
-  // 18. Admin can see the admission
   await check("GET /api/fs/admissions/admin (admin sees pending)", async () => {
-    const res = await fetch(`${BASE_URL}/api/fs/admissions/admin?status=Pending`, {
-      headers: { Cookie: adminCookie },
-    });
+    const res = await fetch(`${BASE_URL}/api/fs/admissions/admin?status=Pending`, { headers: { Cookie: adminCookie } });
     const body = await res.json();
     assert(res.status === 200, `expected 200, got ${res.status}`);
     const found = body.data.some((a) => a.id === admissionId);
     assert(found, "expected to find the smoke-test admission in the pending list");
   });
 
-  // 19. Plain member forbidden from admin admissions list
   await check("GET /api/fs/admissions/admin (member forbidden)", async () => {
-    const res = await fetch(`${BASE_URL}/api/fs/admissions/admin`, {
-      headers: { Cookie: sessionCookie },
-    });
+    const res = await fetch(`${BASE_URL}/api/fs/admissions/admin`, { headers: { Cookie: sessionCookie } });
     assert(res.status === 403, `expected 403, got ${res.status}`);
   });
 
-  // 20. Create a class to approve into
   await check("POST /api/fs/classes (create)", async () => {
     const res = await fetch(`${BASE_URL}/api/fs/classes`, {
       method: "POST",
@@ -262,7 +220,6 @@ async function run() {
     classId = body.data.id;
   });
 
-  // 21. Approve the admission into that class
   await check("PATCH /api/fs/admissions/admin/:id/review (approve)", async () => {
     const res = await fetch(`${BASE_URL}/api/fs/admissions/admin/${admissionId}/review`, {
       method: "PATCH",
@@ -274,7 +231,6 @@ async function run() {
     assert(body.data.status === "Approved", "expected status Approved");
   });
 
-  // 22. Re-reviewing the same admission is rejected
   await check("PATCH .../review (already reviewed rejected)", async () => {
     const res = await fetch(`${BASE_URL}/api/fs/admissions/admin/${admissionId}/review`, {
       method: "PATCH",
@@ -286,11 +242,8 @@ async function run() {
     assert(body.error?.code === "ALREADY_REVIEWED", "expected ALREADY_REVIEWED");
   });
 
-  // 23. Student now shows up on the class roster
   await check("GET /api/fs/students?classId=... (enrollment confirmed)", async () => {
-    const res = await fetch(`${BASE_URL}/api/fs/students?classId=${classId}`, {
-      headers: { Cookie: adminCookie },
-    });
+    const res = await fetch(`${BASE_URL}/api/fs/students?classId=${classId}`, { headers: { Cookie: adminCookie } });
     const body = await res.json();
     assert(res.status === 200, `expected 200, got ${res.status}`);
     const found = body.data.find((s) => s.status === "Active");
@@ -298,7 +251,6 @@ async function run() {
     studentId = found.id;
   });
 
-  // 24. Withdraw the student
   await check("PATCH /api/fs/students/:id/withdraw", async () => {
     const res = await fetch(`${BASE_URL}/api/fs/students/${studentId}/withdraw`, {
       method: "PATCH",
@@ -309,7 +261,6 @@ async function run() {
     assert(body.data.status === "Withdrawn", "expected status Withdrawn");
   });
 
-  // 25. Withdrawing again is rejected (no longer Active)
   await check("PATCH /api/fs/students/:id/withdraw (rejected second time)", async () => {
     const res = await fetch(`${BASE_URL}/api/fs/students/${studentId}/withdraw`, {
       method: "PATCH",
@@ -320,37 +271,92 @@ async function run() {
     assert(body.error?.code === "STUDENT_NOT_ACTIVE", "expected STUDENT_NOT_ACTIVE");
   });
 
-  // 26. FS manual: member with no enrollment/teaching role is blocked
   await check("GET /api/fs/manual (unrelated member blocked)", async () => {
-    const res = await fetch(`${BASE_URL}/api/fs/manual`, {
-      headers: { Cookie: sessionCookie },
-    });
-    // smoke-test member was withdrawn above, so should now be blocked
+    const res = await fetch(`${BASE_URL}/api/fs/manual`, { headers: { Cookie: sessionCookie } });
     assert(res.status === 403 || res.status === 404, `expected 403 or 404, got ${res.status}`);
   });
 
   // ============================================================
-  // End FS tests
+  // CMS — Website Content (new)
   // ============================================================
 
-  // 27. Logout
-  await check("POST /api/auth/logout", async () => {
-    const res = await fetch(`${BASE_URL}/api/auth/logout`, {
+  await check("GET /api/content/website (public, auto-creates default)", async () => {
+    const res = await fetch(`${BASE_URL}/api/content/website`);
+    const body = await res.json();
+    assert(res.status === 200, `expected 200, got ${res.status}: ${JSON.stringify(body)}`);
+    assert(body.data.status === "published", "expected status published");
+    assert(Array.isArray(body.data.sections), "expected sections array");
+  });
+
+  await check("GET /api/content/website/draft (admin, auto-creates default)", async () => {
+    const res = await fetch(`${BASE_URL}/api/content/website/draft`, { headers: { Cookie: adminCookie } });
+    const body = await res.json();
+    assert(res.status === 200, `expected 200, got ${res.status}: ${JSON.stringify(body)}`);
+    assert(body.data.status === "draft", "expected status draft");
+  });
+
+  await check("GET /api/content/website/draft (member forbidden)", async () => {
+    const res = await fetch(`${BASE_URL}/api/content/website/draft`, { headers: { Cookie: sessionCookie } });
+    assert(res.status === 403, `expected 403, got ${res.status}`);
+  });
+
+  const newHeadline = `Smoke Test Headline ${Date.now()}`;
+
+  await check("POST /api/content/website/draft (save)", async () => {
+    const res = await fetch(`${BASE_URL}/api/content/website/draft`, {
       method: "POST",
-      headers: { Cookie: sessionCookie },
+      headers: { "Content-Type": "application/json", Cookie: adminCookie },
+      body: JSON.stringify({
+        copy: { hero: { headline: newHeadline, supportingText: "test", primaryCtaText: "Go", secondaryCtaText: "See" } },
+        sections: [{ sectionKey: "sec-hero", type: "hero", title: "Hero Welcome", isCore: true, order: 1, isVisible: true }],
+      }),
     });
+    const body = await res.json();
+    assert(res.status === 200, `expected 200, got ${res.status}: ${JSON.stringify(body)}`);
+    assert(body.data.copy.hero.headline === newHeadline, "expected draft headline to match what was saved");
+  });
+
+  let publishedVersionBefore = null;
+
+  await check("GET /api/content/website (version before publish)", async () => {
+    const res = await fetch(`${BASE_URL}/api/content/website`);
+    const body = await res.json();
+    publishedVersionBefore = body.data.version;
+    assert(typeof publishedVersionBefore === "number", "expected a numeric version");
+  });
+
+  await check("POST /api/content/website/publish", async () => {
+    const res = await fetch(`${BASE_URL}/api/content/website/publish`, {
+      method: "POST",
+      headers: { Cookie: adminCookie },
+    });
+    const body = await res.json();
+    assert(res.status === 200, `expected 200, got ${res.status}: ${JSON.stringify(body)}`);
+    assert(body.data.version === publishedVersionBefore + 1, "expected version to increment by 1");
+    assert(body.data.copy.hero.headline === newHeadline, "expected published headline to match the published draft");
+  });
+
+  await check("GET /api/content/website (public sees published change)", async () => {
+    const res = await fetch(`${BASE_URL}/api/content/website`);
+    const body = await res.json();
+    assert(res.status === 200, `expected 200, got ${res.status}`);
+    assert(body.data.copy.hero.headline === newHeadline, "expected public site to reflect the newly published headline");
+  });
+
+  // ============================================================
+  // End new tests
+  // ============================================================
+
+  await check("POST /api/auth/logout", async () => {
+    const res = await fetch(`${BASE_URL}/api/auth/logout`, { method: "POST", headers: { Cookie: sessionCookie } });
     assert(res.status === 200, `expected 200, got ${res.status}`);
   });
 
-  // 28. Session actually revoked after logout
   await check("GET /api/auth/me (session revoked after logout)", async () => {
-    const res = await fetch(`${BASE_URL}/api/auth/me`, {
-      headers: { Cookie: sessionCookie },
-    });
+    const res = await fetch(`${BASE_URL}/api/auth/me`, { headers: { Cookie: sessionCookie } });
     assert(res.status === 401, `expected 401 after logout, got ${res.status}`);
   });
 
-  // Summary
   const failed = results.filter((r) => !r.pass);
   console.log(`\n${results.length - failed.length}/${results.length} passed\n`);
   if (failed.length > 0) {
