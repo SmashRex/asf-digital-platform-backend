@@ -15,11 +15,15 @@ export async function getEvents(filter?: "upcoming" | "past") {
   return repo.listEvents(filter);
 }
 
+export async function getFeaturedEvent() {
+  const event = await repo.getFeatured();
+  if (!event) throw AppError.notFound("No upcoming events", "NO_UPCOMING_EVENT");
+  return event;
+}
+
 export async function updateEvent(id: string, input: UpdateEventInput) {
   const existing = await repo.findById(id);
-  if (!existing) {
-    throw AppError.notFound("Event not found", "EVENT_NOT_FOUND");
-  }
+  if (!existing) throw AppError.notFound("Event not found", "EVENT_NOT_FOUND");
   return repo.updateEvent(id, {
     ...input,
     startTime: input.startTime ? new Date(input.startTime) : undefined,
@@ -29,11 +33,7 @@ export async function updateEvent(id: string, input: UpdateEventInput) {
 
 export async function cancelEvent(id: string) {
   const existing = await repo.findById(id);
-  if (!existing) {
-    throw AppError.notFound("Event not found", "EVENT_NOT_FOUND");
-  }
-  if (existing.status === "Cancelled") {
-    throw AppError.conflict("This event is already cancelled", "ALREADY_CANCELLED");
-  }
+  if (!existing) throw AppError.notFound("Event not found", "EVENT_NOT_FOUND");
+  if (existing.status === "Cancelled") throw AppError.conflict("This event is already cancelled", "ALREADY_CANCELLED");
   return repo.cancelEvent(id);
 }

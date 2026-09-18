@@ -7,8 +7,17 @@ import { AppError } from "../../errors/appError.js";
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
     const filter = req.query.filter as "upcoming" | "past" | undefined;
-    const eventsList = await service.getEvents(filter);
-    return sendSuccess(res, eventsList);
+    const data = await service.getEvents(filter);
+    return sendSuccess(res, data);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function featured(req: Request, res: Response, next: NextFunction) {
+  try {
+    const event = await service.getFeaturedEvent();
+    return sendSuccess(res, event);
   } catch (err) {
     next(err);
   }
@@ -17,9 +26,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
     const parsed = createEventSchema.safeParse(req.body);
-    if (!parsed.success) {
-      throw AppError.badRequest("Invalid event data", "VALIDATION_ERROR", parsed.error.flatten().fieldErrors);
-    }
+    if (!parsed.success) throw AppError.badRequest("Invalid event data", "VALIDATION_ERROR", parsed.error.flatten().fieldErrors);
     const event = await service.createEvent(parsed.data, req.user!.id);
     return sendSuccess(res, event, "Event created", undefined, 201);
   } catch (err) {
@@ -30,9 +37,7 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
     const parsed = updateEventSchema.safeParse(req.body);
-    if (!parsed.success) {
-      throw AppError.badRequest("Invalid event data", "VALIDATION_ERROR", parsed.error.flatten().fieldErrors);
-    }
+    if (!parsed.success) throw AppError.badRequest("Invalid event data", "VALIDATION_ERROR", parsed.error.flatten().fieldErrors);
     const event = await service.updateEvent(req.params.id as string, parsed.data);
     return sendSuccess(res, event, "Event updated");
   } catch (err) {

@@ -6,6 +6,7 @@ export async function createAnnouncement(input: {
   title: string;
   message: string;
   priority: string;
+  isUrgent: boolean;
   expiresAt?: Date | null;
   createdBy: string;
 }) {
@@ -18,27 +19,37 @@ export async function findById(id: string) {
   return rows[0] ?? null;
 }
 
-export async function listAnnouncements(includeUnpublished: boolean) {
+export async function listAnnouncements(includeAll: boolean) {
   const now = new Date();
-  const conditions = includeUnpublished
-    ? undefined
-    : and(
-        eq(announcements.publicationStatus, "published"),
-        or(isNull(announcements.expiresAt), gte(announcements.expiresAt, now))
-      );
-
-  const query = db.select().from(announcements);
-  if (conditions) {
-    return query.where(conditions).orderBy(desc(announcements.priority), desc(announcements.createdAt));
+  if (includeAll) {
+    return db.select().from(announcements).orderBy(desc(announcements.priority), desc(announcements.createdAt));
   }
-  return query.orderBy(desc(announcements.createdAt));
+  return db
+    .select()
+    .from(announcements)
+    .where(
+      and(
+        eq(announcements.status, "Published"),
+        or(isNull(announcements.expiresAt), gte(announcements.expiresAt, now))
+      )
+    )
+    .orderBy(desc(announcements.priority), desc(announcements.createdAt));
 }
 
-export async function publishAnnouncement(id: string) {
-  const [row] = await db
-    .update(announcements)
-    .set({ publicationStatus: "published", publishedAt: new Date(), updatedAt: new Date() })
-    .where(eq(announcements.id, id))
-    .returning();
+export async function updateStatus(id: string, fields: Partial<{
+  status: string;
+  revisionNotes: string | null;
+  approvedBy: string | null;
+  approvedAt: Date | null;
+  publishedBy: string | null;
+  publishedAt: Date | null;
+  archivedAt: Date | null;
+}>) {
+  const [row] = await db.update(announcements).set({ ...fields, updatedAt: new Date() }).where(eq(announcements.id, id)).returning();
+  return row;
+}
+
+export async function updateContent(id: string, fields: { title?: string; message?: string }) {
+  const [row] = await db.update(announcements).set({ ...fields, status: "Draft", revisionNotes: null, updatedAt: new Date() }).where(eq(announcements.id, id)).returning();
   return row;
 }

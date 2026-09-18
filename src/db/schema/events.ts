@@ -7,10 +7,16 @@ export const events = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     title: varchar("title", { length: 255 }).notNull(),
+    category: varchar("category", { length: 50 }).notNull().default("Fellowship"),
     description: text("description"),
     location: varchar("location", { length: 255 }),
     startTime: timestamp("start_time", { withTimezone: true }).notNull(),
     endTime: timestamp("end_time", { withTimezone: true }),
+    speaker: varchar("speaker", { length: 255 }),
+    speakerRole: varchar("speaker_role", { length: 255 }),
+    mode: varchar("mode", { length: 20 }).notNull().default("In-Person"),
+    theme: varchar("theme", { length: 255 }),
+    imageUrl: text("image_url"),
     status: varchar("status", { length: 20 }).notNull().default("Active"),
     createdBy: uuid("created_by").references(() => users.id, { onDelete: "restrict" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -20,5 +26,10 @@ export const events = pgTable(
     index("idx_events_start_time").on(table.startTime),
     index("idx_events_status").on(table.status),
     check("chk_events_status", sql`${table.status} IN ('Active', 'Cancelled')`),
+    check("chk_events_mode", sql`${table.mode} IN ('In-Person', 'Online / Zoom', 'Hybrid')`),
+    check(
+      "chk_events_category",
+      sql`${table.category} IN ('Bible Study', 'Prayer', 'Worship', 'Outreach', 'Fellowship', 'Special Program', 'Administrative')`
+    ),
   ]
 );

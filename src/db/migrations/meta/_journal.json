@@ -134,6 +134,20 @@
       "when": 1789764338693,
       "tag": "0018_heavy_sumo",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789765546592,
+      "tag": "0019_fast_grey_gargoyle",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1789766055944,
+      "tag": "0020_bright_wilson_fisk",
+      "breakpoints": true
     }
   ]
 }

@@ -277,7 +277,7 @@ async function run() {
   });
 
   // ============================================================
-  // CMS — Website Content (new)
+  // CMS — Website Content
   // ============================================================
 
   await check("GET /api/content/website (public, auto-creates default)", async () => {
@@ -341,6 +341,192 @@ async function run() {
     const body = await res.json();
     assert(res.status === 200, `expected 200, got ${res.status}`);
     assert(body.data.copy.hero.headline === newHeadline, "expected public site to reflect the newly published headline");
+  });
+
+  // ============================================================
+  // Announcements — full lifecycle
+  // ============================================================
+
+  let normalAnnouncementId = null;
+  let revisionAnnouncementId = null;
+
+  await check("POST /api/announcements (create normal draft)", async () => {
+    const res = await fetch(`${BASE_URL}/api/announcements`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: adminCookie },
+      body: JSON.stringify({ title: "Prayer Meeting", message: "Join us Thursday", priority: "Normal" }),
+    });
+    const body = await res.json();
+    assert(res.status === 201, `expected 201, got ${res.status}: ${JSON.stringify(body)}`);
+    assert(body.data.status === "Draft", "expected status Draft");
+    normalAnnouncementId = body.data.id;
+  });
+
+  await check("PATCH /api/announcements/:id/submit-review", async () => {
+    const res = await fetch(`${BASE_URL}/api/announcements/${normalAnnouncementId}/submit-review`, {
+      method: "PATCH",
+      headers: { Cookie: adminCookie },
+    });
+    const body = await res.json();
+    assert(res.status === 200, `expected 200, got ${res.status}: ${JSON.stringify(body)}`);
+    assert(body.data.status === "Pending Review", "expected status Pending Review");
+  });
+
+  await check("PATCH /api/announcements/:id/approve", async () => {
+    const res = await fetch(`${BASE_URL}/api/announcements/${normalAnnouncementId}/approve`, {
+      method: "PATCH",
+      headers: { Cookie: adminCookie },
+    });
+    const body = await res.json();
+    assert(res.status === 200, `expected 200, got ${res.status}: ${JSON.stringify(body)}`);
+    assert(body.data.status === "Approved", "expected status Approved");
+  });
+
+  await check("PATCH /api/announcements/:id/publish", async () => {
+    const res = await fetch(`${BASE_URL}/api/announcements/${normalAnnouncementId}/publish`, {
+      method: "PATCH",
+      headers: { Cookie: adminCookie },
+    });
+    const body = await res.json();
+    assert(res.status === 200, `expected 200, got ${res.status}: ${JSON.stringify(body)}`);
+    assert(body.data.status === "Published", "expected status Published");
+  });
+
+  await check("PATCH /api/announcements/:id/archive", async () => {
+    const res = await fetch(`${BASE_URL}/api/announcements/${normalAnnouncementId}/archive`, {
+      method: "PATCH",
+      headers: { Cookie: adminCookie },
+    });
+    const body = await res.json();
+    assert(res.status === 200, `expected 200, got ${res.status}: ${JSON.stringify(body)}`);
+    assert(body.data.status === "Archived", "expected status Archived");
+  });
+
+  await check("PATCH /api/announcements/:id/archive (double archive rejected)", async () => {
+    const res = await fetch(`${BASE_URL}/api/announcements/${normalAnnouncementId}/archive`, {
+      method: "PATCH",
+      headers: { Cookie: adminCookie },
+    });
+    const body = await res.json();
+    assert(res.status === 409, `expected 409, got ${res.status}`);
+    assert(body.error?.code === "INVALID_STATUS", "expected INVALID_STATUS");
+  });
+
+  await check("POST /api/announcements (create for revision branch)", async () => {
+    const res = await fetch(`${BASE_URL}/api/announcements`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: adminCookie },
+      body: JSON.stringify({ title: "Prayer Meeting 2", message: "Join us Thursday", priority: "Normal" }),
+    });
+    const body = await res.json();
+    assert(res.status === 201, `expected 201, got ${res.status}: ${JSON.stringify(body)}`);
+    revisionAnnouncementId = body.data.id;
+  });
+
+  await check("PATCH /api/announcements/:id/submit-review (revision branch)", async () => {
+    const res = await fetch(`${BASE_URL}/api/announcements/${revisionAnnouncementId}/submit-review`, {
+      method: "PATCH",
+      headers: { Cookie: adminCookie },
+    });
+    assert(res.status === 200, `expected 200, got ${res.status}`);
+  });
+
+  await check("PATCH /api/announcements/:id/request-revision", async () => {
+    const res = await fetch(`${BASE_URL}/api/announcements/${revisionAnnouncementId}/request-revision`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Cookie: adminCookie },
+      body: JSON.stringify({ notes: "Please add the venue" }),
+    });
+    const body = await res.json();
+    assert(res.status === 200, `expected 200, got ${res.status}: ${JSON.stringify(body)}`);
+    assert(body.data.status === "Revision Requested", "expected status Revision Requested");
+  });
+
+  await check("PUT /api/announcements/:id (edit after revision)", async () => {
+    const res = await fetch(`${BASE_URL}/api/announcements/${revisionAnnouncementId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Cookie: adminCookie },
+      body: JSON.stringify({ message: "Join us Thursday at the main hall" }),
+    });
+    const body = await res.json();
+    assert(res.status === 200, `expected 200, got ${res.status}: ${JSON.stringify(body)}`);
+    assert(body.data.status === "Draft", "expected status back to Draft");
+    assert(body.data.message === "Join us Thursday at the main hall", "expected message updated");
+  });
+
+  await check("POST /api/announcements (isUrgent fast-track)", async () => {
+    const res = await fetch(`${BASE_URL}/api/announcements`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: adminCookie },
+      body: JSON.stringify({ title: "Service starting now", message: "Come quickly!", priority: "Urgent", isUrgent: true }),
+    });
+    const body = await res.json();
+    assert(res.status === 201, `expected 201, got ${res.status}: ${JSON.stringify(body)}`);
+    assert(body.data.status === "Published", "expected urgent announcement to skip straight to Published");
+  });
+
+  // ============================================================
+  // Events
+  // ============================================================
+
+  let eventId = null;
+
+  await check("POST /api/events (minimal fields only)", async () => {
+    const res = await fetch(`${BASE_URL}/api/events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Cookie: adminCookie },
+      body: JSON.stringify({
+        title: "Sunday Service",
+        location: "Glory Tabernacle",
+        startTime: "2026-12-21T08:00:00.000Z",
+      }),
+    });
+    const body = await res.json();
+    assert(res.status === 201, `expected 201, got ${res.status}: ${JSON.stringify(body)}`);
+    eventId = body.data.id;
+  });
+
+  await check("GET /api/events", async () => {
+    const res = await fetch(`${BASE_URL}/api/events`, { headers: { Cookie: adminCookie } });
+    const body = await res.json();
+    assert(res.status === 200, `expected 200, got ${res.status}`);
+    const found = body.data.some((e) => e.id === eventId);
+    assert(found, "expected created event in list");
+  });
+
+  await check("GET /api/events?filter=upcoming", async () => {
+    const res = await fetch(`${BASE_URL}/api/events?filter=upcoming`, { headers: { Cookie: adminCookie } });
+    const body = await res.json();
+    assert(res.status === 200, `expected 200, got ${res.status}`);
+    const found = body.data.some((e) => e.id === eventId);
+    assert(found, "expected event to appear as upcoming");
+  });
+
+  await check("GET /api/events/featured", async () => {
+    const res = await fetch(`${BASE_URL}/api/events/featured`, { headers: { Cookie: adminCookie } });
+    const body = await res.json();
+    assert(res.status === 200, `expected 200, got ${res.status}: ${JSON.stringify(body)}`);
+    assert(body.data.id, "expected a featured event to be returned");
+  });
+
+  await check("PATCH /api/events/:id/cancel", async () => {
+    const res = await fetch(`${BASE_URL}/api/events/${eventId}/cancel`, {
+      method: "PATCH",
+      headers: { Cookie: adminCookie },
+    });
+    const body = await res.json();
+    assert(res.status === 200, `expected 200, got ${res.status}: ${JSON.stringify(body)}`);
+    assert(body.data.status === "Cancelled", "expected status Cancelled");
+  });
+
+  await check("PATCH /api/events/:id/cancel (double cancel rejected)", async () => {
+    const res = await fetch(`${BASE_URL}/api/events/${eventId}/cancel`, {
+      method: "PATCH",
+      headers: { Cookie: adminCookie },
+    });
+    const body = await res.json();
+    assert(res.status === 409, `expected 409, got ${res.status}`);
+    assert(body.error?.code === "ALREADY_CANCELLED", "expected ALREADY_CANCELLED");
   });
 
   // ============================================================
