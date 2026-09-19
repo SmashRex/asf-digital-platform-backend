@@ -13,7 +13,9 @@
     "db:seed:roles": "tsx src/db/seeds/rolesSeed.ts",
     "db:seed:session": "tsx src/db/seeds/academicSessionSeed.ts",
     "db:seed:aliases": "tsx src/db/seeds/outlineAliasesSeed.ts",
-    "db:seed:bookaliases": "tsx src/db/seeds/bibleBookAliasesSeed.ts"
+    "db:seed:bookaliases": "tsx src/db/seeds/bibleBookAliasesSeed.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -29,6 +31,7 @@
     "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.7.0",
+    "file-type": "^22.1.1",
     "helmet": "^8.3.0",
     "multer": "^2.4.0",
     "node-cron": "^4.6.0",
@@ -44,9 +47,12 @@
     "@types/multer": "^2.2.0",
     "@types/node": "^26.4.1",
     "@types/pg": "^8.23.1",
+    "@types/supertest": "^7.2.1",
     "drizzle-kit": "^0.31.10",
     "esbuild": "^0.28.2",
+    "supertest": "^7.2.2",
     "tsx": "^4.23.13",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
   }
 }

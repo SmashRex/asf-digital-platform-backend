@@ -1,6 +1,8 @@
 import { AppError } from "../../errors/appError.js";
 import * as repo from "./cms.repository.js";
 import type { SaveDraftInput } from "./cms.validation.js";
+import { logSystemEvent } from "../../utils/systemEventLogger.js";
+
 
 function toResponseShape(config: any) {
   return {
@@ -53,7 +55,14 @@ export async function publish(userId: string) {
   const newVersion = (published!.version ?? 0) + 1;
   await repo.bumpVersionAndPublish(published!.id, draft.copy, userId, newVersion);
   await repo.replaceSections(published!.id, draft.sections, userId);
+  
   const updated = await repo.getConfigWithSections("published");
+  await logSystemEvent({
+  component: "Database",
+  severity: "Success",
+  event: "Website published",
+  message: `Website published to version ${newVersion}`,
+});
   return toResponseShape(updated!);
 }
 

@@ -1,8 +1,7 @@
 import cron from "node-cron";
 import { recurringServices } from "../config/recurringServices.config.js";
-import * as repo from "../modules/announcements/announcements.repository.js";
-
-const SYSTEM_USER_ID = null; // announcements created by the system have no human author
+import * as service from "../modules/announcements/announcements.service.js";
+import { logSystemEvent } from "../utils/systemEventLogger.js";
 
 function isSameDayAndTime(dayOfWeek: number, time: string, offsetMinutes: number, now: Date) {
   const target = new Date(now);
@@ -18,27 +17,32 @@ function isSameDayAndTime(dayOfWeek: number, time: string, offsetMinutes: number
   );
 }
 
+export let lastSchedulerRunAt: Date | null = null;
+
 async function postAnnouncement(title: string, message: string) {
-  const announcement = await repo.createAnnouncement({
-    title,
-    message,
-    priority: "Urgent",
-    createdBy: SYSTEM_USER_ID as unknown as string,
-    expiresAt: null,
+  await service.createAnnouncement(
+    { title, message, priority: "Urgent", isUrgent: true },
+    null as unknown as string
+  );
+  await logSystemEvent({
+    component: "Sync Worker",
+    severity: "Success",
+    event: "Scheduled announcement posted",
+    message: title,
   });
-  await repo.publishAnnouncement(announcement.id);
 }
 
 export function startAnnouncementScheduler() {
   cron.schedule("* * * * *", async () => {
+    lastSchedulerRunAt = new Date();
     const now = new Date();
 
-    for (const service of recurringServices) {
-      if (isSameDayAndTime(service.dayOfWeek, service.time, 30, now)) {
-        await postAnnouncement(`${service.name} — Starting Soon`, `${service.name} starts in 30 minutes.`);
+    for (const svc of recurringServices) {
+      if (isSameDayAndTime(svc.dayOfWeek, svc.time, 30, now)) {
+        await postAnnouncement(`${svc.name} — Starting Soon`, `${svc.name} starts in 30 minutes.`);
       }
-      if (isSameDayAndTime(service.dayOfWeek, service.time, 0, now)) {
-        await postAnnouncement(`${service.name} — Started`, `${service.name} has started.`);
+      if (isSameDayAndTime(svc.dayOfWeek, svc.time, 0, now)) {
+        await postAnnouncement(`${svc.name} — Started`, `${svc.name} has started.`);
       }
     }
   });

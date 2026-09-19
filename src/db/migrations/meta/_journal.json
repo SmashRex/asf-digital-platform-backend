@@ -148,6 +148,13 @@
       "when": 1789766055944,
       "tag": "0020_bright_wilson_fisk",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1789827633741,
+      "tag": "0021_flat_daredevil",
+      "breakpoints": true
     }
   ]
 }

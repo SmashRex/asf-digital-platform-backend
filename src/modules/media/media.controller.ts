@@ -4,6 +4,7 @@ import { AppError } from "../../errors/appError.js";
 import { sendSuccess } from "../../utils/apiResponse.js";
 import * as service from "./media.service.js";
 import { assignMediaSchema, listMediaQuerySchema, placementKeySchema } from "./media.validation.js";
+import { fileTypeFromBuffer } from "file-type";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -30,6 +31,10 @@ export async function uploadAsset(req: Request, res: Response, next: NextFunctio
     if (!req.file) throw AppError.badRequest("No image file was uploaded", "NO_FILE");
     const altText = typeof req.body.altText === "string" ? req.body.altText : undefined;
     const asset = await service.uploadAsset(req.file, req.user!.id, altText);
+    const realType = await fileTypeFromBuffer(req.file.buffer);
+if (!realType || !realType.mime.startsWith("image/")) {
+  throw AppError.badRequest("This file's real content is not a valid image", "INVALID_FILE_CONTENT");
+}
     return sendSuccess(res, asset, "Media uploaded", undefined, 201);
   } catch (error) {
     next(error);
