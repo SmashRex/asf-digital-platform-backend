@@ -28,13 +28,13 @@ describe("Academic Sessions", () => {
 
   it("GET /api/academic-sessions/active is open to any logged-in member", async () => {
     const res = await request(app).get("/api/academic-sessions/active").set("Cookie", memberCookie);
-    logResponse("Member -> GET /api/academic-sessions/active", res.status, res.body);
+    logResponse("Academic Sessions", "Member -> GET /api/academic-sessions/active", res.status, res.body);
     expect(res.status).toBe(200);
   });
 
   it("Member is BLOCKED from GET /api/academic-sessions (full list, admin-only)", async () => {
     const res = await request(app).get("/api/academic-sessions").set("Cookie", memberCookie);
-    logResponse("Member -> GET /api/academic-sessions", res.status, res.body);
+    logResponse("Academic Sessions", "Member -> GET /api/academic-sessions", res.status, res.body);
     expect(res.status).toBe(403);
   });
 
@@ -42,19 +42,19 @@ describe("Academic Sessions", () => {
     const res = await request(app).post("/api/academic-sessions").set("Cookie", memberCookie).send({
       id: "2099/2100", name: "Fake Session", startDate: "2099-09-01", endDate: "2100-07-31",
     });
-    logResponse("Member -> POST /api/academic-sessions (should be blocked)", res.status, res.body);
+    logResponse("Academic Sessions", "Member -> POST /api/academic-sessions (should be blocked)", res.status, res.body);
     expect(res.status).toBe(403);
   });
 
   it("Member is BLOCKED from triggering the progression engine", async () => {
     const res = await request(app).post("/api/academic-sessions/2027%2F2028/activate-and-progress").set("Cookie", memberCookie);
-    logResponse("Member -> POST .../activate-and-progress (should be blocked)", res.status, res.body);
+    logResponse("Academic Sessions", "Member -> POST .../activate-and-progress (should be blocked)", res.status, res.body);
     expect(res.status).toBe(403);
   });
 
   it("Admin GET full list succeeds, and IDs containing '/' are handled", async () => {
     const res = await request(app).get("/api/academic-sessions").set("Cookie", adminCookie);
-    logResponse("Admin -> GET /api/academic-sessions", res.status, res.body);
+    logResponse("Academic Sessions", "Admin -> GET /api/academic-sessions", res.status, res.body);
     expect(res.status).toBe(200);
     const hasSlashId = res.body.data.some((s: any) => s.id.includes("/"));
     expect(hasSlashId).toBe(true);
@@ -64,13 +64,13 @@ describe("Academic Sessions", () => {
     const res = await request(app)
       .post(`/api/academic-sessions/${encodeURIComponent("2027/2028'; DROP TABLE users;--")}/activate-and-progress`)
       .set("Cookie", adminCookie);
-    logResponse("Admin -> injection-style session id", res.status, res.body);
+    logResponse("Academic Sessions", "Admin -> injection-style session id", res.status, res.body);
     expect(res.status).not.toBe(500);
   });
 
   it("Unauthenticated request is blocked", async () => {
     const res = await request(app).get("/api/academic-sessions");
-    logResponse("No cookie -> GET /api/academic-sessions", res.status, res.body);
+    logResponse("Academic Sessions", "No cookie -> GET /api/academic-sessions", res.status, res.body);
     expect(res.status).toBe(401);
   });
 });

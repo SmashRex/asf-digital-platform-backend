@@ -26,8 +26,17 @@ export async function activateAndProgress(sessionId: string) {
 
     let promotedCount = 0;
     let graduatedCount = 0;
+    let skippedCount = 0;
+    const skippedUserIds: string[] = [];
 
     for (const student of students) {
+      const existingHistory = await repo.findExistingHistory(tx, student.id, sessionId);
+      if (existingHistory) {
+        skippedCount++;
+        skippedUserIds.push(student.id);
+        continue;
+      }
+
       const rule = getProgressionRule(student.academicLevel, student.programDurationYears);
 
       await repo.progressUser(tx, student.id, rule.targetLevel, rule.targetMembershipStatus);
@@ -42,6 +51,7 @@ export async function activateAndProgress(sessionId: string) {
     await repo.deactivateCurrentSession(tx);
     await repo.activateSession(tx, sessionId);
 
-    return { sessionId, totalStudents: students.length, promotedCount, graduatedCount };
+    return { sessionId, totalStudents: students.length, promotedCount, graduatedCount, skippedCount, skippedUserIds };
   });
 }
+

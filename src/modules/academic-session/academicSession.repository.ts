@@ -4,6 +4,7 @@ import { eq, and, ne } from "drizzle-orm";
 import type { Transaction } from "../../db/index.js";
 import type { CreateSessionInput } from "./academicSession.validation.js";
 
+
 export async function listSessions() {
   return db.query.academicSessions.findMany({
     orderBy: (table, { desc }) => [desc(table.startDate)],
@@ -65,4 +66,12 @@ export async function recordHistory(
 
 export async function findActiveSession() {
   return db.query.academicSessions.findFirst({ where: eq(academicSessions.isActive, true) });
+}
+
+export async function findExistingHistory(tx: any, userId: string, sessionId: string) {
+  const rows = await tx
+    .select()
+    .from(userAcademicHistory)
+    .where(and(eq(userAcademicHistory.userId, userId), eq(userAcademicHistory.academicSessionId, sessionId)));
+  return rows[0] ?? null;
 }

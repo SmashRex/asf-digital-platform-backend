@@ -38,7 +38,7 @@ describe("RBAC", () => {
 
   it("setup: login as Technical Administrator", async () => {
     const res = await request(app).post("/api/auth/login").send({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
-    logResponse("setup login (admin)", res.status, res.body);
+    logResponse("RBAC", "setup login (admin)", res.status, res.body);
     expect(res.status).toBe(200);
     adminCookie = res.headers["set-cookie"]![0].split(";")[0];
   });
@@ -46,7 +46,7 @@ describe("RBAC", () => {
   it("setup: register + promote a President", async () => {
     const { cookie, userId } = await registerAndLogin("president", "Vitest President");
     const res = await assignRole(adminCookie, userId, "President / Executive");
-    logResponse("assign role -> President / Executive", res.status, res.body);
+    logResponse("RBAC", "assign role -> President / Executive", res.status, res.body);
     expect(res.status).toBe(200);
     presidentCookie = cookie;
   });
@@ -54,32 +54,32 @@ describe("RBAC", () => {
   it("setup: register + promote a Publicity Coordinator", async () => {
     const { cookie, userId } = await registerAndLogin("publicity", "Vitest Publicity");
     const res = await assignRole(adminCookie, userId, "Publicity Coordinator");
-    logResponse("assign role -> Publicity Coordinator", res.status, res.body);
+    logResponse("RBAC", "assign role -> Publicity Coordinator", res.status, res.body);
     expect(res.status).toBe(200);
     publicityCookie = cookie;
   });
 
   it("Member is blocked from GET /api/fs/admissions/admin", async () => {
     const res = await request(app).get("/api/fs/admissions/admin").set("Cookie", memberCookie);
-    logResponse("Member -> GET /api/fs/admissions/admin", res.status, res.body);
+    logResponse("RBAC", "Member -> GET /api/fs/admissions/admin", res.status, res.body);
     expect(res.status).toBe(403);
   });
 
   it("Admin is allowed GET /api/fs/admissions/admin", async () => {
     const res = await request(app).get("/api/fs/admissions/admin").set("Cookie", adminCookie);
-    logResponse("Admin -> GET /api/fs/admissions/admin", res.status, res.body);
+    logResponse("RBAC", "Admin -> GET /api/fs/admissions/admin", res.status, res.body);
     expect(res.status).toBe(200);
   });
 
   it("President can VIEW events but is BLOCKED from creating one", async () => {
     const listRes = await request(app).get("/api/events").set("Cookie", presidentCookie);
-    logResponse("President -> GET /api/events", listRes.status, listRes.body);
+    logResponse("RBAC", "President -> GET /api/events", listRes.status, listRes.body);
     expect(listRes.status).toBe(200);
 
     const createRes = await request(app).post("/api/events").set("Cookie", presidentCookie).send({
       title: "Should Fail", location: "Nowhere", startTime: "2026-12-25T08:00:00.000Z",
     });
-    logResponse("President -> POST /api/events (should be blocked)", createRes.status, createRes.body);
+    logResponse("RBAC", "President -> POST /api/events (should be blocked)", createRes.status, createRes.body);
     expect(createRes.status).toBe(403);
   });
 
@@ -87,25 +87,25 @@ describe("RBAC", () => {
     const createRes = await request(app).post("/api/announcements").set("Cookie", publicityCookie).send({
       title: "Vitest Publicity Test", message: "Testing publicity role", priority: "Normal",
     });
-    logResponse("Publicity -> POST /api/announcements", createRes.status, createRes.body);
+    logResponse("RBAC", "Publicity -> POST /api/announcements", createRes.status, createRes.body);
     expect(createRes.status).toBe(201);
   });
 
   it("Publicity Coordinator CAN access website draft", async () => {
     const res = await request(app).get("/api/content/website/draft").set("Cookie", publicityCookie);
-    logResponse("Publicity -> GET /api/content/website/draft", res.status, res.body);
+    logResponse("RBAC", "Publicity -> GET /api/content/website/draft", res.status, res.body);
     expect(res.status).toBe(200);
   });
 
   it("Member is blocked from website draft", async () => {
     const res = await request(app).get("/api/content/website/draft").set("Cookie", memberCookie);
-    logResponse("Member -> GET /api/content/website/draft", res.status, res.body);
+    logResponse("RBAC", "Member -> GET /api/content/website/draft", res.status, res.body);
     expect(res.status).toBe(403);
   });
 
   it("Unauthenticated request is blocked entirely", async () => {
     const res = await request(app).get("/api/fs/admissions/admin");
-    logResponse("No cookie -> GET /api/fs/admissions/admin", res.status, res.body);
+    logResponse("RBAC", "No cookie -> GET /api/fs/admissions/admin", res.status, res.body);
     expect(res.status).toBe(401);
   });
 });

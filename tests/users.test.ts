@@ -20,7 +20,7 @@ describe("Users (self-service profile)", () => {
 
   it("GET own profile", async () => {
     const res = await request(app).get("/api/users/profile").set("Cookie", memberCookie);
-    logResponse("Member -> GET /api/users/profile", res.status, res.body);
+    logResponse("Users", "Member -> GET /api/users/profile", res.status, res.body);
     expect(res.status).toBe(200);
   });
 
@@ -29,7 +29,7 @@ describe("Users (self-service profile)", () => {
       subgroup: "Choir",
       name: "Vitest Users Test Updated",
     });
-    logResponse("Member -> PUT profile, attempting to set own subgroup", res.status, res.body);
+    logResponse("Users", "Member -> PUT profile, attempting to set own subgroup", res.status, res.body);
     expect(res.status).toBe(200);
     expect(res.body.data.subgroup).not.toBe("Choir");
   });
@@ -38,20 +38,20 @@ describe("Users (self-service profile)", () => {
     const res = await request(app).put("/api/users/profile").set("Cookie", memberCookie).send({
       name: "Vitest Renamed Successfully",
     });
-    logResponse("Member -> PUT profile, legitimate name change", res.status, res.body);
+    logResponse("Users", "Member -> PUT profile, legitimate name change", res.status, res.body);
     expect(res.status).toBe(200);
     expect(res.body.data.name).toBe("Vitest Renamed Successfully");
   });
 
   it("Tampered/garbage session cookie is rejected, not silently accepted", async () => {
     const res = await request(app).get("/api/users/profile").set("Cookie", "asf_session=totally-fake-tampered-value");
-    logResponse("GET /api/users/profile with tampered cookie", res.status, res.body);
+    logResponse("Users", "GET /api/users/profile with tampered cookie", res.status, res.body);
     expect(res.status).toBe(401);
   });
 
   it("Unauthenticated request to own profile is blocked", async () => {
     const res = await request(app).get("/api/users/profile");
-    logResponse("No cookie -> GET /api/users/profile", res.status, res.body);
+    logResponse("Users", "No cookie -> GET /api/users/profile", res.status, res.body);
     expect(res.status).toBe(401);
   });
 });
