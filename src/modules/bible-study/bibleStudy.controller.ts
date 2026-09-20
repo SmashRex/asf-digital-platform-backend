@@ -27,8 +27,6 @@ function hasPermission(req: Request, key: keyof typeof permissions): boolean {
   return req.user!.roles.some((role) => (permissions[key] as readonly string[]).includes(role));
 }
 
-
-
 export async function current(req: Request, res: Response, next: NextFunction) {
   try {
     res.set("Cache-Control", "public, max-age=3600");
@@ -38,7 +36,6 @@ export async function current(req: Request, res: Response, next: NextFunction) {
     next(err);
   }
 }
-
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
@@ -81,12 +78,19 @@ export async function uploadOutline(req: Request, res: Response, next: NextFunct
       throw AppError.badRequest("No PDF file was uploaded", "NO_FILE");
     }
 
-    const parser = new PDFParse({ data: req.file.buffer });
     let extractedText: string;
     try {
-      extractedText = (await parser.getText()).text;
-    } finally {
-      await parser.destroy();
+      const parser = new PDFParse({ data: req.file.buffer });
+      try {
+        extractedText = (await parser.getText()).text;
+      } finally {
+        await parser.destroy();
+      }
+    } catch (parseErr) {
+      throw AppError.badRequest(
+        "This file could not be read as a PDF. Make sure it's a real, uncorrupted PDF file.",
+        "INVALID_PDF"
+      );
     }
 
     if (extractedText.trim().length < 20) {

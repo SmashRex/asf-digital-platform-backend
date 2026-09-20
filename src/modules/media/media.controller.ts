@@ -29,12 +29,14 @@ function parsePlacementKey(value: string) {
 export async function uploadAsset(req: Request, res: Response, next: NextFunction) {
   try {
     if (!req.file) throw AppError.badRequest("No image file was uploaded", "NO_FILE");
+
+    const realType = await fileTypeFromBuffer(req.file.buffer);
+    if (!realType || !realType.mime.startsWith("image/")) {
+      throw AppError.badRequest("This file's real content is not a valid image", "INVALID_FILE_CONTENT");
+    }
+
     const altText = typeof req.body.altText === "string" ? req.body.altText : undefined;
     const asset = await service.uploadAsset(req.file, req.user!.id, altText);
-    const realType = await fileTypeFromBuffer(req.file.buffer);
-if (!realType || !realType.mime.startsWith("image/")) {
-  throw AppError.badRequest("This file's real content is not a valid image", "INVALID_FILE_CONTENT");
-}
     return sendSuccess(res, asset, "Media uploaded", undefined, 201);
   } catch (error) {
     next(error);
