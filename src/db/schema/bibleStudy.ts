@@ -1,6 +1,7 @@
 import { pgTable, uuid, varchar, text, integer, date, timestamp, jsonb, check, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { users } from "./users.js";
+import { bibleStudySeries } from "./bibleStudySeries.js";
 
 export const bibleStudies = pgTable(
   "bible_studies",
@@ -22,6 +23,8 @@ export const bibleStudies = pgTable(
     conclusion: text("conclusion").notNull(),
     prayerPoints: jsonb("prayer_points").notNull().default([]),
     publicationStatus: varchar("publication_status", { length: 50 }).notNull().default("draft"),
+    seriesId: uuid("series_id").references(() => bibleStudySeries.id, { onDelete: "set null" }),
+    scheduledDate: date("scheduled_date"),
     createdBy: uuid("created_by").references(() => users.id, { onDelete: "restrict" }),
     publishedBy: uuid("published_by").references(() => users.id, { onDelete: "restrict" }),
     publishedAt: timestamp("published_at", { withTimezone: true }),
@@ -33,5 +36,6 @@ export const bibleStudies = pgTable(
     check("chk_lesson_number", sql`${table.lessonNumber} > 0`),
     index("idx_bible_studies_date").on(sql`${table.studyDate} DESC`),
     index("idx_bible_studies_status").on(table.publicationStatus),
+    index("idx_bible_studies_scheduled_date").on(table.scheduledDate),
   ]
 );

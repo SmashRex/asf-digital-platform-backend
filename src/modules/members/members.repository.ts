@@ -1,6 +1,6 @@
 import { db } from "../../db/index.js";
-import { users, userAcademicHistory, academicSessions, userSessions } from "../../db/schema/index.js";
-import { eq, and, ne, ilike, or, count } from "drizzle-orm";
+import { users, userAcademicHistory, academicSessions, userSessions, departments } from "../../db/schema/index.js";
+import { eq, and, ne, ilike, or, count, inArray } from "drizzle-orm";
 import type { Transaction } from "../../db/index.js";
 import { userRoles, roles } from "../../db/schema/index.js";
 import type { ListMembersQuery } from "./members.validation.js";
@@ -62,8 +62,16 @@ export async function listMembers(query: ListMembersQuery) {
 
   const conditions = [ne(users.accountStatus, "Deactivated")];
   if (query.search) {
+    const pattern = `%${query.search}%`;
     conditions.push(
-      or(ilike(users.name, `%${query.search}%`), ilike(users.department, `%${query.search}%`))!
+      or(
+        ilike(users.name, pattern),
+        ilike(users.department, pattern),
+        inArray(
+          users.departmentId,
+          db.select({ id: departments.id }).from(departments).where(ilike(departments.name, pattern))
+        )
+      )!
     );
   }
   if (query.academicLevel) {

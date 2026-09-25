@@ -87,6 +87,11 @@ export async function registerUser(input: RegisterInput, ipAddress: string | nul
     throw AppError.conflict("Email is already registered", "EMAIL_ALREADY_REGISTERED");
   }
 
+  const departmentIsValid = await authRepository.departmentExists(input.departmentId);
+  if (!departmentIsValid) {
+    throw AppError.badRequest("Department does not exist", "INVALID_DEPARTMENT");
+  }
+
   const activeSession = await authRepository.getActiveAcademicSession();
   if (!activeSession) {
     throw AppError.internal("No active academic session is configured", "NO_ACTIVE_SESSION");

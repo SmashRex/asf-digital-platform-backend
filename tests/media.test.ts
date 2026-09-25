@@ -21,7 +21,8 @@ describe("Media", () => {
       email: `vitest-media-${Date.now()}@example.com`,
       password: "vitestpass123",
       name: "Adaeze Nnamdi",
-      department: "Fine Arts",
+      departmentId: "other",
+      gender: "Female",
       academicLevel: "300 Level",
     });
     memberCookie = reg.headers["set-cookie"]![0].split(";")[0];

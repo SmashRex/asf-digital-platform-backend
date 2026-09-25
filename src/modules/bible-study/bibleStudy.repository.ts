@@ -1,6 +1,7 @@
 import { db } from "../../db/index.js";
-import { bibleStudies } from "../../db/schema/index.js";
-import { eq, and, lte, desc } from "drizzle-orm";
+import { bibleStudies, bibleStudySeries } from "../../db/schema/index.js";
+import { eq, and, asc, desc } from "drizzle-orm";
+import type { Transaction } from "../../db/index.js";
 
 export async function listStudies(includeUnpublished: boolean) {
   return db.query.bibleStudies.findMany({
@@ -14,8 +15,8 @@ export async function findCurrentStudy() {
   const rows = await db
     .select()
     .from(bibleStudies)
-    .where(and(eq(bibleStudies.publicationStatus, "published"), lte(bibleStudies.studyDate, today)))
-    .orderBy(desc(bibleStudies.studyDate))
+    .where(and(eq(bibleStudies.publicationStatus, "published"), eq(bibleStudies.scheduledDate, today)))
+    .orderBy(desc(bibleStudies.publishedAt))
     .limit(1);
   return rows[0] ?? null;
 }
@@ -45,4 +46,30 @@ export async function publish(id: string, publishedBy: string) {
     .where(eq(bibleStudies.id, id))
     .returning();
   return study;
+}
+
+// ---- Bible Study Series ----
+
+export async function createSeriesTx(tx: Transaction, input: { title: string; theme?: string; startDate: string; academicSessionId?: string }, createdBy: string) {
+  const [series] = await tx
+    .insert(bibleStudySeries)
+    .values({ ...input, createdBy })
+    .returning();
+  return series;
+}
+
+export async function bulkCreateLessonsTx(tx: Transaction, seriesId: string, lessons: any[], createdBy: string) {
+  const rows = lessons.map((lesson) => ({ ...lesson, seriesId, createdBy }));
+  return tx.insert(bibleStudies).values(rows).returning();
+}
+
+export async function findSeriesById(id: string) {
+  return db.query.bibleStudySeries.findFirst({ where: eq(bibleStudySeries.id, id) });
+}
+
+export async function findLessonsBySeriesId(seriesId: string) {
+  return db.query.bibleStudies.findMany({
+    where: eq(bibleStudies.seriesId, seriesId),
+    orderBy: [asc(bibleStudies.lessonNumber)],
+  });
 }

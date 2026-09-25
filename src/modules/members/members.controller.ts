@@ -83,7 +83,7 @@ export async function updateRole(req: Request, res: Response, next: NextFunction
     if (!parsed.success) {
       throw AppError.badRequest("Invalid role update data", "VALIDATION_ERROR", parsed.error.flatten().fieldErrors);
     }
-    const updated = await updateMemberRole(id, parsed.data, req.user!.id);
+    const updated = await updateMemberRole(id, parsed.data, req.user!.id, req.user!.roles);
     return sendSuccess(res, updated, "Role updated successfully");
   } catch (err) {
     next(err);

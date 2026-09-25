@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import multer from "multer";
 import { PDFParse } from "pdf-parse";
-import { createBibleStudySchema, updateBibleStudySchema } from "./bibleStudy.validation.js";
+import { createBibleStudySchema, updateBibleStudySchema, createSeriesSchema } from "./bibleStudy.validation.js";
 import * as service from "./bibleStudy.service.js";
 import { sendSuccess } from "../../utils/apiResponse.js";
 import { AppError } from "../../errors/appError.js";
@@ -140,6 +140,31 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
     const study = await service.getStudyById(req.params.id as string, canSeeUnpublished);
     res.set("Cache-Control", study.publicationStatus === "published" ? "public, max-age=3600" : "private, no-store");
     return sendSuccess(res, study);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ---- Bible Study Series ----
+
+export async function createSeries(req: Request, res: Response, next: NextFunction) {
+  try {
+    const parsed = createSeriesSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw AppError.badRequest("Invalid series data", "VALIDATION_ERROR", parsed.error.flatten().fieldErrors);
+    }
+    const result = await service.createSeriesWithLessons(parsed.data, req.user!.id);
+    return sendSuccess(res, result, "Series created", undefined, 201);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getSeries(req: Request, res: Response, next: NextFunction) {
+  try {
+    const canSeeUnpublished = hasPermission(req, "bible_study.create");
+    const result = await service.getSeriesById(req.params.id as string, canSeeUnpublished);
+    return sendSuccess(res, result);
   } catch (err) {
     next(err);
   }

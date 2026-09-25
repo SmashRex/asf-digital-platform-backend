@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { requireAuth } from "../../middleware/requireAuth.js";
 import { requirePermission } from "../../middleware/requirePermission.js";
-import { list, current, getById, create, update, publish, uploadOutline, uploadMiddleware } from "./bibleStudy.controller.js";
+import { list, current, getById, create, update, publish, uploadOutline, uploadMiddleware, createSeries, getSeries } from "./bibleStudy.controller.js";
 import * as aliasRepo from "./outlineAliases.repository.js";
 import * as bookAliasRepo from "./bibleBookAliases.repository.js";
 import { sendSuccess } from "../../utils/apiResponse.js";
@@ -59,6 +59,10 @@ bibleStudyRouter.post("/book-aliases", requireAuth, requirePermission("bible_stu
 
 
 bibleStudyRouter.post("/upload-outline", requireAuth, requirePermission("bible_study.create"), handleUpload, uploadOutline);
+
+bibleStudyRouter.post("/series", requireAuth, requirePermission("bible_study.create"), createSeries);
+bibleStudyRouter.get("/series/:id", requireAuth, getSeries);
+
 bibleStudyRouter.get("/", requireAuth, list);
 bibleStudyRouter.get("/:id", requireAuth, getById);
 bibleStudyRouter.post("/", requireAuth, requirePermission("bible_study.create"), create);

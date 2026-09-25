@@ -35,6 +35,8 @@ export async function register(req: Request, res: Response, next: NextFunction) 
         email: user.email,
         name: user.name,
         department: user.department,
+        departmentId: user.departmentId,
+        gender: user.gender,
         academicLevel: user.academicLevel,
         subgroup: user.subgroup,
         roles,
@@ -63,18 +65,20 @@ export async function verify(req: Request, res: Response, next: NextFunction) {
     );
 
     res.cookie("asf_session", rawSessionToken, {
-  httpOnly: true,
-  secure: env.NODE_ENV === "production",
-  sameSite: env.NODE_ENV === "production" ? "none" : "lax",
-  maxAge: appConfig.auth.sessionTtlDays * 24 * 60 * 60 * 1000,
-  path: "/",
-});
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: appConfig.auth.sessionTtlDays * 24 * 60 * 60 * 1000,
+      path: "/",
+    });
 
     return sendSuccess(res, {
       id: user.id,
       email: user.email,
       name: user.name,
       department: user.department,
+      departmentId: user.departmentId,
+      gender: user.gender,
       academicLevel: user.academicLevel,
       subgroup: user.subgroup,
       roles,
@@ -98,11 +102,11 @@ export async function logout(req: Request, res: Response, next: NextFunction) {
       await revokeSession(req.sessionId);
     }
     res.clearCookie("asf_session", {
-  path: "/",
-  httpOnly: true,
-  secure: env.NODE_ENV === "production",
-  sameSite: env.NODE_ENV === "production" ? "none" : "lax",
-});
+      path: "/",
+      httpOnly: true,
+      secure: env.NODE_ENV === "production",
+      sameSite: env.NODE_ENV === "production" ? "none" : "lax",
+    });
     return sendSuccess(res, null, "Logged out successfully");
   } catch (err) {
     next(err);
@@ -150,8 +154,15 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     });
 
     return sendSuccess(res, {
-      id: user.id, email: user.email, name: user.name, department: user.department,
-      academicLevel: user.academicLevel, subgroup: user.subgroup, roles,
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      department: user.department,
+      departmentId: user.departmentId,
+      gender: user.gender,
+      academicLevel: user.academicLevel,
+      subgroup: user.subgroup,
+      roles,
     });
   } catch (err) {
     next(err);

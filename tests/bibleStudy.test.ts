@@ -20,7 +20,8 @@ describe("Bible Study", () => {
       email: `vitest-bs-${Date.now()}@example.com`,
       password: "vitestpass123",
       name: "Oluwaseun Bakare",
-      department: "Economics",
+      departmentId: "other",
+      gender: "Male",
       academicLevel: "400 Level",
     });
     memberCookie = reg.headers["set-cookie"]![0].split(";")[0];
@@ -51,7 +52,7 @@ describe("Bible Study", () => {
     expect(res.status).toBe(403);
   });
 
-  it("Admin CAN upload a real PDF outline and gets extracted studies back", async () => {
+    it("Admin CAN upload a real PDF outline and gets extracted studies back", async () => {
     const res = await request(app)
       .post("/api/bible-study/upload-outline")
       .set("Cookie", adminCookie)

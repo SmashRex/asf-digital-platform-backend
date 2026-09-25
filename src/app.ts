@@ -19,7 +19,9 @@ import { eventsRouter } from "./modules/events/events.routes.js";
 import { announcementsRouter } from "./modules/announcements/announcements.routes.js";
 import { systemRouter } from "./modules/system/system.routes.js";
 import { cmsRouter } from "./modules/cms/cms.routes.js";
-
+import { departmentsRouter } from "./modules/departments/departments.routes.js";
+import { presidentRouter } from "./modules/president/president.routes.js";
+import { governanceRouter } from "./modules/governance/governance.routes.js";
 
 
 export const app = express();
@@ -52,7 +54,9 @@ app.use("/api/events", eventsRouter);
 app.use("/api/announcements", announcementsRouter);
 app.use("/api/system", systemRouter);
 app.use("/api/content", cmsRouter);
-
+app.use("/api/departments", departmentsRouter);
+app.use("/api/president", presidentRouter);
+app.use("/api", governanceRouter);
 
 
 

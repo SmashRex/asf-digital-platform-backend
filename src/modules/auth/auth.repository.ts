@@ -1,5 +1,5 @@
 import { db } from "../../db/index.js";
-import { users, userRoles, userAcademicHistory, academicSessions, magicLinkTokens,userSessions } from "../../db/schema/index.js";
+import { users, userRoles, userAcademicHistory, academicSessions, magicLinkTokens,userSessions, departments } from "../../db/schema/index.js";
 import type { RegisterInput } from "./auth.validation.js";
 import { and, eq, gt, ne,sql as rawSql, sql } from "drizzle-orm";
 import type { Transaction } from "../../db/index.js";
@@ -30,7 +30,8 @@ export async function createUserWithRegistration(
       .values({
         email: input.email,
         name: input.name,
-        department: input.department,
+        departmentId: input.departmentId,
+        gender: input.gender,
         academicLevel: input.academicLevel,
         programDurationYears: input.programDurationYears,
         phoneNumber: input.phoneNumber,
@@ -182,4 +183,13 @@ export async function setPasswordHash(userId: string, passwordHash: string) {
 
 export async function findUserByEmailWithPassword(email: string) {
   return db.query.users.findFirst({ where: sql`lower(${users.email}) = ${email}` });
+}
+
+export async function departmentExists(departmentId: string) {
+  const rows = await db
+    .select({ id: departments.id })
+    .from(departments)
+    .where(eq(departments.id, departmentId))
+    .limit(1);
+  return rows.length > 0;
 }

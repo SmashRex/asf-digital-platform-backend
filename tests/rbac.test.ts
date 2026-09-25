@@ -10,7 +10,7 @@ async function registerAndLogin(emailPrefix: string, name: string) {
   const email = `vitest-${emailPrefix}-${Date.now()}@example.com`;
   const password = "vitestpass123";
   const res = await request(app).post("/api/auth/register").send({
-    email, password, name, department: "Computer Science", academicLevel: "100 Level",
+    email, password, name, departmentId: "computer-science", gender: "Male", academicLevel: "100 Level",
   });
   const cookie = res.headers["set-cookie"]![0].split(";")[0];
   const userId = res.body.data.id;

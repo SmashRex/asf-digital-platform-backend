@@ -11,7 +11,8 @@ describe("Bible", () => {
       email: `vitest-bible-${Date.now()}@example.com`,
       password: "vitestpass123",
       name: "Chinedu Eze",
-      department: "Chemistry",
+      departmentId: "chemistry",
+      gender: "Male",
       academicLevel: "200 Level",
     });
     memberCookie = res.headers["set-cookie"]![0].split(";")[0];

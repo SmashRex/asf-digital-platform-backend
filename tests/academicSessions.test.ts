@@ -15,7 +15,8 @@ describe("Academic Sessions", () => {
       email: `vitest-as-member-${Date.now()}@example.com`,
       password: "vitestpass123",
       name: "Vitest AS Member",
-      department: "Computer Science",
+      departmentId: "computer-science",
+      gender: "Male",
       academicLevel: "100 Level",
     });
     memberCookie = reg.headers["set-cookie"]![0].split(";")[0];

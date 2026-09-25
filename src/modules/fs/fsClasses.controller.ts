@@ -46,7 +46,7 @@ export async function manageTeacher(req: Request, res: Response, next: NextFunct
       throw AppError.badRequest("Invalid teacher action data", "VALIDATION_ERROR", parsed.error.flatten().fieldErrors);
     }
     const result = await service.manageTeacher(req.params.id as string, parsed.data);
-    return sendSuccess(res, result, "Teacher mapping updated");
+    return sendSuccess(res, result, "Teacher mapping updated", undefined, 201);
   } catch (err) {
     next(err);
   }

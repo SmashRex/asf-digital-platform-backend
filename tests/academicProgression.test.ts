@@ -6,15 +6,23 @@ import { logResponse } from "./helpers/logResponse.js";
 const ADMIN_EMAIL = process.env.SMOKE_ADMIN_EMAIL || "test2@example.com";
 const ADMIN_PASSWORD = process.env.SMOKE_ADMIN_PASSWORD || "AdminTest2026x";
 
-async function registerStudent(name: string, department: string, academicLevel: string, programDurationYears: 4 | 5) {
+async function registerStudent(
+  name: string,
+  departmentId: string,
+  gender: "Male" | "Female",
+  academicLevel: string,
+  programDurationYears: 4 | 5
+) {
   const res = await request(app).post("/api/auth/register").send({
     email: `vitest-prog-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@example.com`,
     password: "vitestpass123",
     name,
-    department,
+    departmentId,
+    gender,
     academicLevel,
     programDurationYears,
   });
+  expect(res.status).toBe(201);
   return res.body.data.id as string;
 }
 
@@ -32,9 +40,9 @@ describe("Academic Progression", () => {
   });
 
   it("setup: register three students at different levels and program durations", async () => {
-    fourYearAt400Id = await registerStudent("Chidinma Okafor", "Mechanical Engineering", "400 Level", 4);
-    fiveYearAt400Id = await registerStudent("Bayo Adewale", "Architecture", "400 Level", 5);
-    normalAt100Id = await registerStudent("Ifeoma Nwosu", "Mass Communication", "100 Level", 4);
+    fourYearAt400Id = await registerStudent("Chidinma Okafor", "mechanical-engineering", "Female", "400 Level", 4);
+    fiveYearAt400Id = await registerStudent("Bayo Adewale", "architecture", "Male", "400 Level", 5);
+    normalAt100Id = await registerStudent("Ifeoma Nwosu", "other", "Female", "100 Level", 4);
 
     expect(fourYearAt400Id).toBeDefined();
     expect(fiveYearAt400Id).toBeDefined();

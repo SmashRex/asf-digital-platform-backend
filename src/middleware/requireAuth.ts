@@ -48,6 +48,8 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
       email: user.email,
       name: user.name,
       department: user.department,
+      departmentId: user.departmentId,
+      gender: user.gender,
       academicLevel: user.academicLevel,
       accountStatus: user.accountStatus,
       roles,

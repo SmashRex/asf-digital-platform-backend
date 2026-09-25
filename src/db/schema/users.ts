@@ -1,19 +1,21 @@
 import { pgTable, uuid, varchar, text, timestamp, smallint, uniqueIndex, index, check } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-
+import { departments } from "./departments.js";
 export const users = pgTable(
   "users",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     email: varchar("email", { length: 255 }).notNull(),
     name: varchar("name", { length: 255 }).notNull(),
-    department: varchar("department", { length: 255 }).notNull(),
+    department: varchar("department", { length: 255 }),
     academicLevel: varchar("academic_level", { length: 50 }).notNull(),
     programDurationYears: smallint("program_duration_years").notNull().default(4),
     phoneNumber: varchar("phone_number", { length: 50 }),
     subgroup: varchar("subgroup", { length: 100 }),
     accountStatus: varchar("account_status", { length: 50 }).notNull().default("Active"),
     membershipStatus: varchar("membership_status", { length: 50 }).notNull().default("Active Student"),
+    departmentId: varchar("department_id", { length: 100 }).references(() => departments.id, { onDelete: "restrict" }),
+    gender: varchar("gender", { length: 10 }),
     avatarUrl: text("avatar_url"),
     passwordHash: text("password_hash"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

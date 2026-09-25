@@ -11,17 +11,35 @@ describe("Users (self-service profile)", () => {
       email: `vitest-users-${Date.now()}@example.com`,
       password: "vitestpass123",
       name: "Vitest Users Test",
-      department: "Computer Science",
+      departmentId: "computer-science",
+      gender: "Male",
       academicLevel: "100 Level",
     });
-    memberCookie = res.headers["set-cookie"]![0].split(";")[0];
+    logResponse("Users", "setup: register member", res.status, res.body);
     expect(res.status).toBe(201);
+    memberCookie = res.headers["set-cookie"]![0].split(";")[0];
   });
 
   it("GET own profile", async () => {
     const res = await request(app).get("/api/users/profile").set("Cookie", memberCookie);
     logResponse("Users", "Member -> GET /api/users/profile", res.status, res.body);
     expect(res.status).toBe(200);
+  });
+
+  it("GET own profile includes departmentId and gender", async () => {
+    const res = await request(app).get("/api/users/profile").set("Cookie", memberCookie);
+    logResponse("Users", "Member -> GET profile (departmentId/gender)", res.status, res.body);
+    expect(res.status).toBe(200);
+    expect(res.body.data.departmentId).toBe("computer-science");
+    expect(res.body.data.gender).toBe("Male");
+  });
+
+  it("GET own profile never includes the password hash", async () => {
+    const res = await request(app).get("/api/users/profile").set("Cookie", memberCookie);
+    logResponse("Users", "Member -> GET profile (check no passwordHash)", res.status, res.body);
+    expect(res.status).toBe(200);
+    expect(JSON.stringify(res.body)).not.toContain("passwordHash");
+    expect(JSON.stringify(res.body)).not.toContain("$2b$");
   });
 
   it("Member CANNOT self-edit their own subgroup (field should be silently ignored, not applied)", async () => {
@@ -32,6 +50,8 @@ describe("Users (self-service profile)", () => {
     logResponse("Users", "Member -> PUT profile, attempting to set own subgroup", res.status, res.body);
     expect(res.status).toBe(200);
     expect(res.body.data.subgroup).not.toBe("Choir");
+    expect(JSON.stringify(res.body)).not.toContain("passwordHash");
+    expect(JSON.stringify(res.body)).not.toContain("$2b$");
   });
 
   it("Legitimate self-edit (name) succeeds", async () => {
@@ -41,6 +61,8 @@ describe("Users (self-service profile)", () => {
     logResponse("Users", "Member -> PUT profile, legitimate name change", res.status, res.body);
     expect(res.status).toBe(200);
     expect(res.body.data.name).toBe("Vitest Renamed Successfully");
+    expect(JSON.stringify(res.body)).not.toContain("passwordHash");
+    expect(JSON.stringify(res.body)).not.toContain("$2b$");
   });
 
   it("Tampered/garbage session cookie is rejected, not silently accepted", async () => {

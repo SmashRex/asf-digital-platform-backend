@@ -1,6 +1,6 @@
 import { db } from "../../db/index.js";
 import { events } from "../../db/schema/index.js";
-import { eq, gte, lt, desc, asc } from "drizzle-orm";
+import { eq, and, gte, lt, desc, asc } from "drizzle-orm";
 
 export async function createEvent(input: {
   title: string;
@@ -35,7 +35,12 @@ export async function listEvents(filter?: "upcoming" | "past") {
 
 export async function getFeatured() {
   const now = new Date();
-  const rows = await db.select().from(events).where(gte(events.startTime, now)).orderBy(asc(events.startTime)).limit(1);
+  const rows = await db
+    .select()
+    .from(events)
+    .where(and(gte(events.startTime, now), eq(events.status, "Active")))
+    .orderBy(asc(events.startTime))
+    .limit(1);
   return rows[0] ?? null;
 }
 
