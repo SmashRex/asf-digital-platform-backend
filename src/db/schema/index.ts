@@ -31,3 +31,4 @@ export * from "./capabilities.js";
 export * from "./userCapabilities.js";
 export * from "./auditLogs.js";
 export * from "./governanceRequests.js";
+export * from "./handovers.js";

@@ -211,6 +211,13 @@
       "when": 1790324112610,
       "tag": "0029_goofy_nomad",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1790407691025,
+      "tag": "0030_clever_talisman",
+      "breakpoints": true
     }
   ]
 }

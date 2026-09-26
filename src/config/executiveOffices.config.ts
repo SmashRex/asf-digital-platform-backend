@@ -1,0 +1,27 @@
+export const canonicalExecutiveOffices = [
+  { id: "academic-coordinator", name: "Academic Coordinator" },
+  { id: "akindeko-hall-coordinator", name: "Akindeko Hall Coordinator" },
+  { id: "assistant-general-secretary", name: "Assistant General Secretary" },
+  { id: "assistant-off-campus-coordinator", name: "Assistant Off-Campus Coordinator" },
+  { id: "assistant-organizing-coordinator", name: "Assistant Organizing Coordinator" },
+  { id: "bible-study-coordinator", name: "Bible Study Coordinator" },
+  { id: "brothers-coordinator", name: "Brothers' Coordinator" },
+  { id: "choir-coordinator", name: "Choir Coordinator" },
+  { id: "church-mission-coordinator", name: "Church Mission Coordinator" },
+  { id: "drama-coordinator", name: "Drama Coordinator" },
+  { id: "evangelism-coordinator", name: "Evangelism/Follow-up Coordinator" },
+  { id: "financial-secretary", name: "Financial Secretary" },
+  { id: "general-secretary", name: "General Secretary" },
+  { id: "librarian", name: "Librarian" },
+  { id: "obanla-female-coordinator", name: "Obanla Female Coordinator" },
+  { id: "obanla-male-coordinator", name: "Obanla Male Coordinator" },
+  { id: "off-campus-coordinator", name: "Off-Campus Coordinator" },
+  { id: "organizing-coordinator", name: "Organizing Coordinator" },
+  { id: "prayer-coordinator", name: "Prayer Coordinator" },
+  { id: "president", name: "President" },
+  { id: "publicity-coordinator", name: "Public Relation Officer (PRO)/Publicity Coordinator" },
+  { id: "sisters-coordinator", name: "Sisters' Coordinator" },
+  { id: "vice-president", name: "Vice President" },
+] as const;
+
+export const canonicalExecutiveOfficeIds = canonicalExecutiveOffices.map((office) => office.id);

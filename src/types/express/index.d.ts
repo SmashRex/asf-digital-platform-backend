@@ -5,6 +5,13 @@ declare global {
     interface Request {
       user?: AuthenticatedUser;
       sessionId?: string;
+      authorization?: {
+        accountStatus: string;
+        executiveOffices: { id: string; name: string }[];
+        dashboardIds: string[];
+        capabilityIds: string[];
+        permissionKeys: string[];
+      };
     }
   }
 }

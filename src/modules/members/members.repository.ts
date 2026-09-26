@@ -103,12 +103,12 @@ export async function hasRole(userId: string, roleId: string) {
   });
 }
 
-export async function assignRole(userId: string, roleId: string, assignedBy: string) {
-  await db.insert(userRoles).values({ userId, roleId, assignedBy }).onConflictDoNothing();
+export async function assignRole(userId: string, roleId: string, assignedBy: string, executor: typeof db | Transaction = db) {
+  await executor.insert(userRoles).values({ userId, roleId, assignedBy }).onConflictDoNothing();
 }
 
-export async function removeRole(userId: string, roleId: string) {
-  await db.delete(userRoles).where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, roleId)));
+export async function removeRole(userId: string, roleId: string, executor: typeof db | Transaction = db) {
+  await executor.delete(userRoles).where(and(eq(userRoles.userId, userId), eq(userRoles.roleId, roleId)));
 }
 
 export async function updateAccountStatus(userId: string, accountStatus: string) {
@@ -128,8 +128,8 @@ export async function setPasswordHash(userId: string, passwordHash: string) {
   await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, userId));
 }
 
-export async function updateSubgroup(userId: string, subgroup: string) {
-  const [row] = await db
+export async function updateSubgroup(userId: string, subgroup: string, executor: typeof db | Transaction = db) {
+  const [row] = await executor
     .update(users)
     .set({ subgroup, updatedAt: new Date() })
     .where(eq(users.id, userId))

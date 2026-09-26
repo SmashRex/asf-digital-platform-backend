@@ -30,3 +30,21 @@ export async function hasCapability(userId: string, capabilityId: string) {
     .limit(1);
   return row.length > 0;
 }
+
+export async function getUserDashboardIds(userId: string) {
+  const rows = await db
+    .select({ id: dashboards.id })
+    .from(userDashboardAccess)
+    .innerJoin(dashboards, eq(userDashboardAccess.dashboardId, dashboards.id))
+    .where(eq(userDashboardAccess.userId, userId));
+  return rows.map((row) => row.id);
+}
+
+export async function getUserCapabilityIds(userId: string) {
+  const rows = await db
+    .select({ id: capabilities.id })
+    .from(userCapabilities)
+    .innerJoin(capabilities, eq(userCapabilities.capabilityId, capabilities.id))
+    .where(eq(userCapabilities.userId, userId));
+  return rows.map((row) => row.id);
+}

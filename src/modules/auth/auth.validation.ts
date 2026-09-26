@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { canonicalSubgroups } from "../../config/subgroups.config.js";
 
 export const registerSchema = z.object({
   email: z.string().trim().toLowerCase().email("Invalid email address"),
@@ -12,7 +13,7 @@ export const registerSchema = z.object({
   gender: z.enum(["Male", "Female"], { message: "Gender is required" }),
   programDurationYears: z.union([z.literal(4), z.literal(5)]).default(4),
   phoneNumber: z.string().trim().max(50).optional(),
-  subgroup: z.string().trim().max(100).optional(),
+  subgroup: z.enum(canonicalSubgroups).optional(),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

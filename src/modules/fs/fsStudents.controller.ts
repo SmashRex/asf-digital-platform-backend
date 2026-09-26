@@ -4,6 +4,8 @@ import { sendSuccess } from "../../utils/apiResponse.js";
 import multer from "multer";
 import { parse } from "csv-parse/sync";
 import { AppError } from "../../errors/appError.js";
+import { z } from "zod";
+import { canonicalSubgroups } from "../../config/subgroups.config.js";
 
 const upload = multer({ storage: multer.memoryStorage() });
 export const uploadMiddleware = upload.single("file");
@@ -43,12 +45,14 @@ export async function bulkGraduate(req: Request, res: Response, next: NextFuncti
     if (!req.file) {
       throw AppError.badRequest("No CSV file was uploaded", "NO_FILE");
     }
-    const records = parse(req.file.buffer.toString("utf-8"), { columns: true, skip_empty_lines: true }) as {
-  name: string;
-  academicLevel: string;
-  subgroup: string;
-}[];
-    const results = await service.bulkGraduate(records);
+    const records = parse(req.file.buffer.toString("utf-8"), { columns: true, skip_empty_lines: true }) as unknown[];
+    const rowSchema = z.object({ name: z.string().trim().min(1), academicLevel: z.string().trim().min(1), subgroup: z.enum(canonicalSubgroups) }).strict();
+    const parsedRows = records.map((record, index) => {
+      const parsed = rowSchema.safeParse(record);
+      if (!parsed.success) throw AppError.badRequest(`Invalid graduation row ${index + 2}`, "VALIDATION_ERROR", parsed.error.flatten().fieldErrors);
+      return parsed.data;
+    });
+    const results = await service.bulkGraduate(parsedRows, req.user!.id);
     return sendSuccess(res, results, "Bulk graduation processed");
   } catch (err) {
     next(err);

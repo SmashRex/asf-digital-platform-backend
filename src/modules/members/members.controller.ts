@@ -12,6 +12,7 @@ import { listMembersQuerySchema } from "./members.validation.js";
 import { getMemberDirectory } from "./members.service.js";
 import { permissions } from "../../config/permissions.config.js";
 import { changeSubgroup } from "./members.service.js";
+import { canonicalSubgroups } from "../../config/subgroups.config.js";
 
 const uuidParamSchema = z.string().uuid();
 
@@ -121,11 +122,9 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
 export async function updateSubgroup(req: Request, res: Response, next: NextFunction) {
   try {
     const id = parseIdParam(req.params.id);
-    const { subgroup } = req.body;
-    if (!subgroup || typeof subgroup !== "string") {
-      throw AppError.badRequest("subgroup is required", "VALIDATION_ERROR");
-    }
-    const member = await changeSubgroup(id, subgroup);
+    const parsed = z.object({ subgroup: z.enum(canonicalSubgroups) }).safeParse(req.body);
+    if (!parsed.success) throw AppError.badRequest("Invalid subgroup", "VALIDATION_ERROR", parsed.error.flatten().fieldErrors);
+    const member = await changeSubgroup(id, parsed.data.subgroup, req.user!.id);
     return sendSuccess(res, member, "Subgroup updated");
   } catch (err) {
     next(err);

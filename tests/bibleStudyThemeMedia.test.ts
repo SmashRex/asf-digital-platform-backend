@@ -3,6 +3,9 @@ import request from "supertest";
 import path from "path";
 import { app } from "../src/app.js";
 import { logResponse } from "./helpers/logResponse.js";
+import { db } from "../src/db/index.js";
+import { mediaPlacements } from "../src/db/schema/index.js";
+import { eq } from "drizzle-orm";
 
 const ADMIN_EMAIL = process.env.SMOKE_ADMIN_EMAIL || "test2@example.com";
 const ADMIN_PASSWORD = process.env.SMOKE_ADMIN_PASSWORD || "AdminTest2026x";
@@ -15,6 +18,7 @@ describe("Bible Study theme media placement", () => {
   let uploadedAssetId: string;
 
   it("setup: login as admin + register a plain member", async () => {
+    await db.update(mediaPlacements).set({ currentAssetId: null }).where(eq(mediaPlacements.key, PLACEMENT_KEY));
     const login = await request(app).post("/api/auth/login").send({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
     logResponse("Bible Study Theme Media", "setup login (admin)", login.status, login.body);
     expect(login.status).toBe(200);

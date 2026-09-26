@@ -31,6 +31,8 @@ describe("Academic Progression", () => {
   let fourYearAt400Id: string;
   let fiveYearAt400Id: string;
   let normalAt100Id: string;
+  const targetYear = 2100 + (Date.now() % 1000);
+  const targetSessionId = `${targetYear}/${targetYear + 1}`;
 
   it("setup: login as admin", async () => {
     const res = await request(app).post("/api/auth/login").send({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
@@ -40,6 +42,13 @@ describe("Academic Progression", () => {
   });
 
   it("setup: register three students at different levels and program durations", async () => {
+    const session = await request(app).post("/api/academic-sessions").set("Cookie", adminCookie).send({
+      id: targetSessionId,
+      name: "Test Progression Session",
+      startDate: "2099-10-01",
+      endDate: "2100-07-31",
+    });
+    expect([201, 409]).toContain(session.status);
     fourYearAt400Id = await registerStudent("Chidinma Okafor", "mechanical-engineering", "Female", "400 Level", 4);
     fiveYearAt400Id = await registerStudent("Bayo Adewale", "architecture", "Male", "400 Level", 5);
     normalAt100Id = await registerStudent("Ifeoma Nwosu", "other", "Female", "100 Level", 4);
@@ -49,9 +58,9 @@ describe("Academic Progression", () => {
     expect(normalAt100Id).toBeDefined();
   });
 
-  it("Trigger progression on the currently INACTIVE session (2027/2028)", async () => {
+  it("Trigger progression on the test-created inactive session", async () => {
     const res = await request(app)
-      .post(`/api/academic-sessions/${encodeURIComponent("2027/2028")}/activate-and-progress`)
+      .post(`/api/academic-sessions/${encodeURIComponent(targetSessionId)}/activate-and-progress`)
       .set("Cookie", adminCookie);
     logResponse("Academic Progression", "Admin -> activate-and-progress (2027/2028)", res.status, res.body);
     expect(res.status).toBe(200);

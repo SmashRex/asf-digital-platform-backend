@@ -4,6 +4,7 @@ import * as repo from "./members.repository.js";
 import type { AcademicLevelOverrideInput, ListMembersQuery, UpdateRoleInput, UpdateStatusInput } from "./members.validation.js";
 import { users } from "../../db/schema/index.js";
 import { hashPassword } from "../../utils/password.js";
+import { recordAudit } from "../../utils/auditLog.js";
 
 type UserRow = typeof users.$inferSelect;
 
@@ -121,16 +122,24 @@ export async function updateMemberRole(
     throw AppError.badRequest("You cannot change your own high-privilege role", "CANNOT_SELF_ESCALATE");
   }
 
-  if (input.action === "assign") {
-    await repo.assignRole(targetUserId, input.roleId, actingUserId);
-  } else {
-    if (input.roleId === "Member") {
-      throw AppError.badRequest("The base Member role cannot be removed", "CANNOT_REMOVE_BASE_ROLE");
+  return db.transaction(async (tx) => {
+    if (input.action === "assign") {
+      await repo.assignRole(targetUserId, input.roleId, actingUserId, tx);
+    } else {
+      if (input.roleId === "Member") {
+        throw AppError.badRequest("The base Member role cannot be removed", "CANNOT_REMOVE_BASE_ROLE");
+      }
+      await repo.removeRole(targetUserId, input.roleId, tx);
     }
-    await repo.removeRole(targetUserId, input.roleId);
-  }
-
-  return withoutPasswordHash(await repo.findUserById(targetUserId));
+    await recordAudit({
+      actorId: actingUserId,
+      action: `role.${input.action}`,
+      targetType: "user",
+      targetId: targetUserId,
+      metadata: { roleId: input.roleId },
+    }, tx);
+    return withoutPasswordHash(await repo.findUserByIdTx(tx, targetUserId));
+  });
 }
 
 export async function updateMemberStatus(targetUserId: string, input: UpdateStatusInput, actingUserId: string) {
@@ -161,6 +170,10 @@ export async function adminResetPassword(targetUserId: string, newPassword: stri
   await repo.setPasswordHash(targetUserId, passwordHash);
 }
 
-export async function changeSubgroup(userId: string, subgroup: string) {
-  return withoutPasswordHash(await repo.updateSubgroup(userId, subgroup));
+export async function changeSubgroup(userId: string, subgroup: string, actingUserId: string) {
+  return db.transaction(async (tx) => {
+    const updated = await repo.updateSubgroup(userId, subgroup, tx);
+    await recordAudit({ actorId: actingUserId, action: "subgroup.updated", targetType: "user", targetId: userId, metadata: { subgroup } }, tx);
+    return withoutPasswordHash(updated);
+  });
 }

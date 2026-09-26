@@ -202,7 +202,7 @@ describe("Members", () => {
     const res = await request(app)
       .patch(`/api/members/${memberId}/subgroup`)
       .set("Cookie", adminCookie)
-      .send({ subgroup: "Vitest Subgroup" });
+      .send({ subgroup: "Choir" });
     logResponse("Members", "Admin -> change subgroup (check no passwordHash)", res.status, res.body);
     expect(res.status).toBe(200);
     expect(JSON.stringify(res.body)).not.toContain("passwordHash");

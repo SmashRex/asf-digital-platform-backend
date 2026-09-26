@@ -1,6 +1,8 @@
 import { AppError } from "../../errors/appError.js";
 import * as repo from "./fsStudents.repository.js";
 import { updateSubgroup } from "../members/members.repository.js";
+import { db } from "../../db/index.js";
+import { recordAudit } from "../../utils/auditLog.js";
 
 
 export async function getStudents(classId?: string) {
@@ -30,18 +32,21 @@ export async function withdrawStudent(studentId: string) {
 }
 
 
-export async function bulkGraduate(rows: { name: string; academicLevel: string; subgroup: string }[]) {
-  const results: { name: string; status: string }[] = [];
+export async function bulkGraduate(rows: { name: string; academicLevel: string; subgroup: string }[], actingUserId: string) {
+  return db.transaction(async (tx) => {
+    const results: { name: string; status: string }[] = [];
 
-  for (const row of rows) {
-    const user = await repo.findUserByNameAndLevel(row.name, row.academicLevel);
-    if (!user) {
-      results.push({ name: row.name, status: "NOT_FOUND" });
-      continue;
+    for (const row of rows) {
+      const user = await repo.findUserByNameAndLevel(row.name, row.academicLevel);
+      if (!user) {
+        results.push({ name: row.name, status: "NOT_FOUND" });
+        continue;
+      }
+      await updateSubgroup(user.id, row.subgroup, tx);
+      await recordAudit({ actorId: actingUserId, action: "subgroup.updated", targetType: "user", targetId: user.id, metadata: { subgroup: row.subgroup, source: "fs_bulk_graduation" } }, tx);
+      results.push({ name: row.name, status: "UPDATED" });
     }
-    await updateSubgroup(user.id, row.subgroup);
-    results.push({ name: row.name, status: "UPDATED" });
-  }
 
-  return results;
+    return results;
+  });
 }

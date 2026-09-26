@@ -1,10 +1,8 @@
 import { z } from "zod";
 import { appConfig } from "../../config/app.config.js";
+import { canonicalSubgroups } from "../../config/subgroups.config.js";
 
-export const subgroupValues = [
-  "Bible Study", "Prayer", "Drama", "Organizing", "Choir", "Church Mission",
-  "Academic", "Evangelism/Follow-up", "Publicity",
-] as const;
+export const subgroupValues = canonicalSubgroups;
 
 export const academicLevelValues = ["100 Level", "200 Level", "300 Level", "400 Level", "500 Level", "Postgraduate", "Alumni"] as const;
 

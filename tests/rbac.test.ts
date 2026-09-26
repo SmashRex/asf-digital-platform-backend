@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import request from "supertest";
 import { app } from "../src/app.js";
 import { logResponse } from "./helpers/logResponse.js";
+import { db } from "../src/db/index.js";
+import { userDashboardAccess, userRoles } from "../src/db/schema/index.js";
 
 const ADMIN_EMAIL = process.env.SMOKE_ADMIN_EMAIL || "test2@example.com";
 const ADMIN_PASSWORD = process.env.SMOKE_ADMIN_PASSWORD || "AdminTest2026x";
@@ -27,6 +29,7 @@ async function assignRole(adminCookie: string, userId: string, roleId: string) {
 describe("RBAC", () => {
   let memberCookie: string;
   let adminCookie: string;
+  let adminId: string;
   let presidentCookie: string;
   let publicityCookie: string;
 
@@ -41,13 +44,17 @@ describe("RBAC", () => {
     logResponse("RBAC", "setup login (admin)", res.status, res.body);
     expect(res.status).toBe(200);
     adminCookie = res.headers["set-cookie"]![0].split(";")[0];
+    adminId = res.body.data.id;
   });
 
   it("setup: register + promote a President", async () => {
     const { cookie, userId } = await registerAndLogin("president", "Vitest President");
     const res = await assignRole(adminCookie, userId, "President / Executive");
     logResponse("RBAC", "assign role -> President / Executive", res.status, res.body);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("PROTECTED_ROLE_REQUIRES_PRESIDENT");
+    await db.insert(userRoles).values({ userId, roleId: "President / Executive" });
+    await db.insert(userDashboardAccess).values({ userId, dashboardId: "president", grantedBy: adminId }).onConflictDoNothing();
     presidentCookie = cookie;
   });
 

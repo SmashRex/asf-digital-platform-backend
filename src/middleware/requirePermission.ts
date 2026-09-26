@@ -9,7 +9,9 @@ export function requirePermission(permissionKey: PermissionKey) {
     }
 
     const allowedRoles = permissions[permissionKey];
-    const hasPermission = req.user.roles.some((role: string) => (allowedRoles as readonly string[]).includes(role));
+    const hasPermission = req.authorization
+      ? req.authorization.permissionKeys.includes(permissionKey)
+      : req.user.roles.some((role: string) => (allowedRoles as readonly string[]).includes(role));
 
     if (!hasPermission) {
       return next(AppError.forbidden("You lack permission to perform this action", "PERMISSION_DENIED"));
