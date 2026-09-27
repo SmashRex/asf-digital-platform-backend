@@ -10,7 +10,7 @@ import { loginSchema } from "./auth.validation.js";
 import { loginWithPassword } from "./auth.service.js";
 import { magicLinkRequestSchema } from "./auth.validation.js";
 import { requestMagicLink } from "./auth.service.js";
-
+import { resolveAuthorization } from "../authorization/authorization.resolver.js";
 
 export async function register(req: Request, res: Response, next: NextFunction) {
   try {
@@ -90,7 +90,17 @@ export async function verify(req: Request, res: Response, next: NextFunction) {
 
 export async function me(req: Request, res: Response, next: NextFunction) {
   try {
-    return sendSuccess(res, req.user);
+    const authorization = await resolveAuthorization({
+      userId: req.user!.id,
+      accountStatus: req.user!.accountStatus,
+      roles: req.user!.roles,
+    });
+    return sendSuccess(res, {
+      ...req.user,
+      executiveOffices: authorization.executiveOffices,
+      dashboards: authorization.dashboardIds,
+      capabilities: authorization.capabilityIds,
+    });
   } catch (err) {
     next(err);
   }

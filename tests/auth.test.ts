@@ -85,6 +85,19 @@ describe("Auth", () => {
     expect(res.body.data.gender).toBe("Male");
   });
 
+    it("GET /api/auth/me includes resolved executiveOffices/dashboards/capabilities", async () => {
+    const login = await request(app).post("/api/auth/login").send({ email: "president-test@example.com", password: "PresidentTest2026x" });
+    expect(login.status).toBe(200);
+    const presCookie = login.headers["set-cookie"]![0].split(";")[0];
+
+    const res = await request(app).get("/api/auth/me").set("Cookie", presCookie);
+    logResponse("Auth", "President -> GET /api/auth/me (authorization context)", res.status, res.body);
+    expect(res.status).toBe(200);
+    expect(res.body.data.executiveOffices).toContainEqual({ id: "president", name: "President" });
+    expect(res.body.data.dashboards).toContain("president");
+    expect(res.body.data.capabilities).toEqual([]);
+  });
+
   it("POST /api/auth/login (correct password)", async () => {
     const res = await request(app).post("/api/auth/login").send({ email: testEmail, password: testPassword });
     logResponse("Auth", "POST /api/auth/login", res.status, res.body);

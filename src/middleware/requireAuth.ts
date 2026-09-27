@@ -4,7 +4,6 @@ import { appConfig } from "../config/app.config.js";
 import { hashToken } from "../utils/token.js";
 import * as authRepository from "../modules/auth/auth.repository.js";
 import { db } from "../db/index.js";
-import { resolveAuthorization } from "../modules/authorization/authorization.resolver.js";
 
 export async function requireAuth(req: Request, _res: Response, next: NextFunction) {
   try {
@@ -21,7 +20,7 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
       throw AppError.unauthorized("Session is invalid or has expired", "INVALID_SESSION");
     }
 
-   const user = await authRepository.findUserById(db, session.userId);
+    const user = await authRepository.findUserById(db, session.userId);
     if (!user) {
       throw AppError.unauthorized("User no longer exists", "INVALID_SESSION");
     }
@@ -30,8 +29,6 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
       throw AppError.forbidden("Account is not active", "ACCOUNT_NOT_ACTIVE");
     }
 
-    // Sliding renewal: only push expiresAt forward if within the renewal window,
-    // otherwise just record activity without rewriting expiresAt every request
     const msUntilExpiry = session.expiresAt.getTime() - Date.now();
     const renewalThresholdMs = appConfig.auth.sessionSlidingRenewalDays * 24 * 60 * 60 * 1000;
 
@@ -55,7 +52,6 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
       accountStatus: user.accountStatus,
       roles,
     };
-    req.authorization = await resolveAuthorization({ userId: user.id, accountStatus: user.accountStatus, roles });
     req.sessionId = session.id;
 
     next();

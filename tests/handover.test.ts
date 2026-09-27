@@ -27,13 +27,25 @@ async function registerMember(label: string) {
 describe("executive handover", () => {
   it("rejects malformed, unknown, and duplicate CSV assignments", async () => {
     const { cookie } = await loginAdmin();
-    const malformed = await request(app).post("/api/president/handovers").set("Cookie", cookie).attach("file", Buffer.from("wrong,headers\n1,2\n"), { filename: "handover.csv", contentType: "text/csv" });
+
+    const malformed = await request(app)
+      .post("/api/president/handovers")
+      .set("Cookie", cookie)
+      .send({ csv: "wrong,headers\n1,2\n" });
     expect(malformed.status).toBe(400);
-    const unknown = await request(app).post("/api/president/handovers").set("Cookie", cookie).attach("file", Buffer.from("memberId,officeId\n11111111-1111-4111-8111-111111111111,president\n"), { filename: "handover.csv", contentType: "text/csv" });
+
+    const unknown = await request(app)
+      .post("/api/president/handovers")
+      .set("Cookie", cookie)
+      .send({ csv: "memberId,officeId\n11111111-1111-4111-8111-111111111111,president\n" });
     expect(unknown.status).toBe(422);
+
     const memberId = await registerMember("duplicate");
     const duplicateCsv = `memberId,officeId\n${memberId},president\n${memberId},president\n`;
-    const duplicate = await request(app).post("/api/president/handovers").set("Cookie", cookie).attach("file", Buffer.from(duplicateCsv), { filename: "handover.csv", contentType: "text/csv" });
+    const duplicate = await request(app)
+      .post("/api/president/handovers")
+      .set("Cookie", cookie)
+      .send({ csv: duplicateCsv });
     expect(duplicate.status).toBe(422);
     expect(duplicate.body.data.validationErrors.join(" ")).toContain("Duplicate assignment");
   });
@@ -44,15 +56,21 @@ describe("executive handover", () => {
     const incomingPublicity = await registerMember("incoming-publicity");
     const outgoing = await registerMember("outgoing");
     await db.insert(userExecutiveOffices).values({ userId: outgoing, officeId: "president", assignedBy: adminId });
+
     const csv = `memberId,officeId\n${incomingPresident},president\n${incomingPublicity},publicity-coordinator\n`;
-    const submitted = await request(app).post("/api/president/handovers").set("Cookie", cookie).attach("file", Buffer.from(csv), { filename: "handover.csv", contentType: "text/csv" });
+    const submitted = await request(app)
+      .post("/api/president/handovers")
+      .set("Cookie", cookie)
+      .send({ csv });
     expect(submitted.status).toBe(201);
     expect(submitted.body.data.status).toBe("Validated");
+
     const id = submitted.body.data.id as string;
     const approved = await request(app).post(`/api/president/handovers/${id}/approve`).set("Cookie", cookie);
     expect(approved.status).toBe(200);
     const published = await request(app).post(`/api/president/handovers/${id}/publish`).set("Cookie", cookie);
     expect(published.status).toBe(200);
+
     const presidentAssignment = await db.select().from(userExecutiveOffices).where(and(eq(userExecutiveOffices.userId, incomingPresident), eq(userExecutiveOffices.officeId, "president")));
     const outgoingAssignment = await db.select().from(userExecutiveOffices).where(eq(userExecutiveOffices.userId, outgoing));
     const outgoingUser = await db.select({ id: users.id }).from(users).where(eq(users.id, outgoing));

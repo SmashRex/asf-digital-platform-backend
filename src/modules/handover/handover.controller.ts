@@ -5,8 +5,10 @@ import * as service from "./handover.service.js";
 
 export async function submit(req: Request, res: Response, next: NextFunction) {
   try {
-    if (!req.file) throw AppError.badRequest("A CSV file is required", "CSV_FILE_REQUIRED");
-    const result = await service.submit(req.file.buffer.toString("utf8"), req.user!.id);
+    if (!req.body?.csv || typeof req.body.csv !== "string") {
+      throw AppError.badRequest("A CSV string is required in the request body", "CSV_CONTENT_REQUIRED");
+    }
+    const result = await service.submit(req.body.csv, req.user!.id);
     if (result.validationErrors.length > 0) return sendSuccess(res, result, "Handover draft requires correction", undefined, 422);
     return sendSuccess(res, result, "Handover submitted for review", undefined, 201);
   } catch (error) { next(error); }
