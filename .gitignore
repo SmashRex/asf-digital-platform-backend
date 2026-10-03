@@ -5,3 +5,6 @@ dist/
 .DS_Store
 tests/output/
 cookies.txt
+cms-*-backup.json
+cms-*-after-*.json
+cms-*.json
