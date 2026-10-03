@@ -1,6 +1,7 @@
 import { jsonb, pgTable, text, timestamp, uuid, varchar, check, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { users } from "./users.js";
+import type { HandoverStoredRow } from "../../modules/handover/handover.validation.js";
 
 export const handovers = pgTable(
   "handovers",
@@ -9,7 +10,7 @@ export const handovers = pgTable(
     submittedBy: uuid("submitted_by").notNull().references(() => users.id, { onDelete: "restrict" }),
     status: varchar("status", { length: 20 }).notNull().default("Draft"),
     csvContent: text("csv_content"),
-    parsedRows: jsonb("parsed_rows").$type<{ memberId: string; officeId: string }[]>().notNull(),
+    parsedRows: jsonb("parsed_rows").$type<HandoverStoredRow[]>().notNull(),
     validationErrors: jsonb("validation_errors").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
