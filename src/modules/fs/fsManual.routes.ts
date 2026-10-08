@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { requireAuth } from "../../middleware/requireAuth.js";
 import { requireOffice } from "../../middleware/requireOffice.js";
-import { upload_, download, uploadMiddleware } from "./fsManual.controller.js";
+import { upload_, download, info, uploadMiddleware } from "./fsManual.controller.js";
 import multer from "multer";
 import { AppError } from "../../errors/appError.js";
 
@@ -17,4 +17,5 @@ function handleUpload(req: any, res: any, next: any) {
 }
 
 fsManualRouter.post("/", requireAuth, requireOffice("vice-president"), handleUpload, upload_);
+fsManualRouter.get("/info", requireAuth, info);
 fsManualRouter.get("/", requireAuth, download);
