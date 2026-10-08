@@ -1,13 +1,26 @@
 import { AppError } from "../../errors/appError.js";
 import * as repo from "./fsClasses.repository.js";
-import type { CreateClassInput, UpdateClassInput, TeacherActionInput } from "./fsClasses.validation.js";
+import { csvCell } from "../../utils/csvCell.js";
+import type { CreateClassInput, UpdateClassInput, TeacherActionInput, ListClassesQuery } from "./fsClasses.validation.js";
 
 export async function createClass(input: CreateClassInput, createdBy: string) {
+  if (!(await repo.sessionExists(input.academicSessionId))) {
+    throw AppError.badRequest("Academic session does not exist", "INVALID_ACADEMIC_SESSION");
+  }
   return repo.createClass({ ...input, createdBy });
 }
 
-export async function getClasses() {
-  return repo.listClasses();
+export async function getClasses(filters: ListClassesQuery) {
+  return repo.listClasses(filters);
+}
+
+export async function getClassDetail(id: string) {
+  const fsClass = await repo.findById(id);
+  if (!fsClass) {
+    throw AppError.notFound("Class not found", "CLASS_NOT_FOUND");
+  }
+  const roster = await repo.getRoster(id);
+  return { ...fsClass, teachers: roster.teachers, students: roster.students };
 }
 
 export async function updateClass(id: string, input: UpdateClassInput) {
@@ -54,11 +67,11 @@ export async function getRosterExport(classId: string) {
 
   const teacherNames = roster.teachers.map((t) => t.teacherName).join(", ") || "No teachers assigned";
   const lines = [
-    `Class: ${fsClass.name}`,
-    `Teachers: ${teacherNames}`,
+    `Class: ${csvCell(fsClass.name)}`,
+    `Teachers: ${csvCell(teacherNames)}`,
     "",
     "Student Name,Email,Level,Status",
-    ...roster.students.map((s) => `${s.studentName},${s.studentEmail},${s.studentLevel},${s.status}`),
+    ...roster.students.map((s) => [s.studentName, s.studentEmail, s.academicLevel, s.status].map(csvCell).join(",")),
   ];
   return lines.join("\n");
 }
