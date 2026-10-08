@@ -1,13 +1,13 @@
 import { Router } from "express";
 import { requireAuth } from "../../middleware/requireAuth.js";
-import { requirePermission } from "../../middleware/requirePermission.js";
-import { list, recordCompletion, withdraw } from "./fsStudents.controller.js";
-import { bulkGraduate, uploadMiddleware } from "./fsStudents.controller.js";
+import { requireOffice } from "../../middleware/requireOffice.js";
+import { list, recordCompletion, withdraw, bulkGraduate, uploadMiddleware } from "./fsStudents.controller.js";
 
 export const fsStudentsRouter = Router();
 
-fsStudentsRouter.get("/", requireAuth, requirePermission("fs.admissions.review"), list);
-fsStudentsRouter.patch("/:id/record-completion", requireAuth, requirePermission("fs.students.record_completion"), recordCompletion);
-fsStudentsRouter.patch("/:id/withdraw", requireAuth, requirePermission("fs.admissions.review"), withdraw);
+const vpAccess = [requireAuth, requireOffice("vice-president")];
 
-fsStudentsRouter.post("/bulk-graduate", requireAuth, requirePermission("fs.admissions.review"), uploadMiddleware, bulkGraduate);
+fsStudentsRouter.get("/", ...vpAccess, list);
+fsStudentsRouter.patch("/:id/record-completion", ...vpAccess, recordCompletion);
+fsStudentsRouter.patch("/:id/withdraw", ...vpAccess, withdraw);
+fsStudentsRouter.post("/bulk-graduate", ...vpAccess, uploadMiddleware, bulkGraduate);

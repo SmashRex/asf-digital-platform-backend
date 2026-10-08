@@ -1,8 +1,9 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../../db/index.js";
 import type { Transaction } from "../../db/index.js";
-import { departments, executiveOffices, handovers, userExecutiveOffices, users } from "../../db/schema/index.js";
+import { departments, executiveOffices, handovers, userDashboardAccess, userExecutiveOffices, users } from "../../db/schema/index.js";
 import type { HandoverStoredRow, ResolvedHandoverRow } from "./handover.validation.js";
+import { officeDashboards } from "../../config/officeDashboards.config.js";
 
 // Finds members by identity regardless of account/membership status.
 // The service decides what to do with inactive members (result: INACTIVE).
@@ -63,6 +64,24 @@ export async function markApproved(tx: Transaction, id: string, approvedBy: stri
 
 export async function publish(tx: Transaction, id: string, rows: ResolvedHandoverRow[]) {
   const officeIds = [...new Set(rows.map((row) => row.officeId))];
+
+  // Outgoing holders lose the explicit dashboard grant tied to the offices being replaced.
+  const outgoing = await tx
+    .select({ userId: userExecutiveOffices.userId, officeId: userExecutiveOffices.officeId })
+    .from(userExecutiveOffices)
+    .where(inArray(userExecutiveOffices.officeId, officeIds));
+  for (const officeId of officeIds) {
+    const dashboardId = officeDashboards[officeId];
+    if (!dashboardId) continue;
+    const outgoingIds = outgoing.filter((row) => row.officeId === officeId).map((row) => row.userId);
+    if (outgoingIds.length > 0) {
+      await tx.delete(userDashboardAccess).where(and(
+        eq(userDashboardAccess.dashboardId, dashboardId),
+        inArray(userDashboardAccess.userId, outgoingIds),
+      ));
+    }
+  }
+
   await tx.delete(userExecutiveOffices).where(inArray(userExecutiveOffices.officeId, officeIds));
   await tx.insert(userExecutiveOffices).values(rows.map((row) => ({ userId: row.memberId, officeId: row.officeId })));
   const [row] = await tx.update(handovers).set({ status: "Published", publishedAt: new Date(), updatedAt: new Date() })

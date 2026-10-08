@@ -1,10 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { afterAll, describe, it, expect, vi } from "vitest";
 import request from "supertest";
+import { eq } from "drizzle-orm";
 import { app } from "../src/app.js";
+import { db } from "../src/db/index.js";
+import { userExecutiveOffices } from "../src/db/schema/index.js";
 import { logResponse } from "./helpers/logResponse.js";
 
-const ADMIN_EMAIL = process.env.SMOKE_ADMIN_EMAIL || "test2@example.com";
-const ADMIN_PASSWORD = process.env.SMOKE_ADMIN_PASSWORD || "AdminTest2026x";
+vi.setConfig({ testTimeout: 300_000 });
 
 async function registerMember(name: string, departmentId: string, gender: "Male" | "Female", academicLevel: string) {
   const res = await request(app).post("/api/auth/register").send({
@@ -20,7 +22,9 @@ async function registerMember(name: string, departmentId: string, gender: "Male"
 }
 
 describe("Foundational School", () => {
+  // "adminCookie" is the cookie of a temporary Vice President account created in setup.
   let adminCookie: string;
+  let vpUserId: string;
   let applicantCookie: string;
   let applicantId: string;
   let admissionId: string;
@@ -28,13 +32,22 @@ describe("Foundational School", () => {
   let studentId: string;
   let teacherUserId: string;
 
-  it("setup: login as admin, register an applicant and a teacher candidate", async () => {
-    const login = await request(app).post("/api/auth/login").send({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
-    logResponse("Foundational School", "setup login (admin)", login.status, login.body);
-    expect(login.status).toBe(200);
-    adminCookie = login.headers["set-cookie"]![0].split(";")[0];
+  afterAll(async () => {
+    if (vpUserId) await db.delete(userExecutiveOffices).where(eq(userExecutiveOffices.userId, vpUserId));
+  }, 120_000);
 
-        const applicant = await registerMember("Grace Adeyemi", "biochemistry", "Female", "200 Level");
+  it("setup: create a temporary VP, register an applicant and a teacher candidate", async () => {
+    const vp = await registerMember("Temporary VP", "computer-science", "Male", "500 Level");
+    vpUserId = vp.id;
+    adminCookie = vp.cookie;
+    await db.insert(userExecutiveOffices).values({ userId: vpUserId, officeId: "vice-president" });
+
+    const me = await request(app).get("/api/auth/me").set("Cookie", adminCookie);
+    logResponse("Foundational School", "setup (temporary VP) -> GET /api/auth/me", me.status, me.body);
+    expect(me.status).toBe(200);
+    expect(me.body.data.dashboards).toContain("vice-president");
+
+    const applicant = await registerMember("Grace Adeyemi", "biochemistry", "Female", "200 Level");
     applicantCookie = applicant.cookie;
     applicantId = applicant.id;
 
@@ -59,38 +72,39 @@ describe("Foundational School", () => {
     expect(res.body.error.code).toBe("ADMISSION_ALREADY_PENDING");
   });
 
-  it("Member without permission is BLOCKED from admin admissions list", async () => {
+  it("Member without the VP office is BLOCKED from admin admissions list", async () => {
     const res = await request(app).get("/api/fs/admissions/admin").set("Cookie", applicantCookie);
     logResponse("Foundational School", "Applicant -> GET admin admissions list (should be blocked)", res.status, res.body);
     expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe("OFFICE_REQUIRED");
   });
 
-  it("Admin sees the pending application in the list", async () => {
+  it("VP sees the pending application in the list", async () => {
     const res = await request(app).get("/api/fs/admissions/admin?status=Pending").set("Cookie", adminCookie);
-    logResponse("Foundational School", "Admin -> GET admin admissions list", res.status, res.body);
+    logResponse("Foundational School", "VP -> GET admin admissions list", res.status, res.body);
     expect(res.status).toBe(200);
     const found = res.body.data.some((a: any) => a.id === admissionId);
     expect(found).toBe(true);
   });
 
-  it("Admin creates a new FS class", async () => {
+  it("VP creates a new FS class", async () => {
     const res = await request(app).post("/api/fs/classes").set("Cookie", adminCookie).send({
       name: `Vitest FS Class ${Date.now()}`,
       academicSessionId: "2027/2028",
       semester: "First",
       teacherCap: 2,
     });
-    logResponse("Foundational School", "Admin -> POST /api/fs/classes", res.status, res.body);
+    logResponse("Foundational School", "VP -> POST /api/fs/classes", res.status, res.body);
     expect(res.status).toBe(201);
     classId = res.body.data.id;
   });
 
-  it("Admin assigns the teacher candidate to the class", async () => {
+  it("VP assigns the teacher candidate to the class", async () => {
     const res = await request(app)
       .post(`/api/fs/classes/${classId}/teachers`)
       .set("Cookie", adminCookie)
       .send({ action: "assign", teacherId: teacherUserId });
-    logResponse("Foundational School", "Admin -> assign teacher to class", res.status, res.body);
+    logResponse("Foundational School", "VP -> assign teacher to class", res.status, res.body);
     expect(res.status).toBe(201);
   });
 
@@ -99,7 +113,7 @@ describe("Foundational School", () => {
       .post(`/api/fs/classes/${classId}/teachers`)
       .set("Cookie", adminCookie)
       .send({ action: "assign", teacherId: teacherUserId });
-    logResponse("Foundational School", "Admin -> duplicate teacher assignment (should be clean 409)", res.status, res.body);
+    logResponse("Foundational School", "VP -> duplicate teacher assignment (should be clean 409)", res.status, res.body);
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe("TEACHER_ALREADY_ASSIGNED");
   });
@@ -109,16 +123,16 @@ describe("Foundational School", () => {
       .patch(`/api/fs/admissions/admin/${admissionId}/review`)
       .set("Cookie", adminCookie)
       .send({ action: "approve" });
-    logResponse("Foundational School", "Admin -> approve with no classId (should fail validation)", res.status, res.body);
+    logResponse("Foundational School", "VP -> approve with no classId (should fail validation)", res.status, res.body);
     expect(res.status).toBe(400);
   });
 
-  it("Admin approves the application into the class (approve -> enroll transaction)", async () => {
+  it("VP approves the application into the class (approve -> enroll transaction)", async () => {
     const res = await request(app)
       .patch(`/api/fs/admissions/admin/${admissionId}/review`)
       .set("Cookie", adminCookie)
       .send({ action: "approve", classId, notes: "Welcome aboard" });
-    logResponse("Foundational School", "Admin -> approve admission into class", res.status, res.body);
+    logResponse("Foundational School", "VP -> approve admission into class", res.status, res.body);
     expect(res.status).toBe(200);
     expect(res.body.data.status).toBe("Approved");
   });
@@ -128,14 +142,14 @@ describe("Foundational School", () => {
       .patch(`/api/fs/admissions/admin/${admissionId}/review`)
       .set("Cookie", adminCookie)
       .send({ action: "reject" });
-    logResponse("Foundational School", "Admin -> re-review already-reviewed admission (should fail)", res.status, res.body);
+    logResponse("Foundational School", "VP -> re-review already-reviewed admission (should fail)", res.status, res.body);
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe("ALREADY_REVIEWED");
   });
 
   it("The applicant now appears as an Active student on the class roster", async () => {
     const res = await request(app).get(`/api/fs/students?classId=${classId}`).set("Cookie", adminCookie);
-    logResponse("Foundational School", "Admin -> GET roster for class", res.status, res.body);
+    logResponse("Foundational School", "VP -> GET roster for class", res.status, res.body);
     expect(res.status).toBe(200);
     const found = res.body.data.find((s: any) => s.userId === applicantId && s.status === "Active");
     expect(found).toBeDefined();
@@ -150,21 +164,21 @@ describe("Foundational School", () => {
 
   it("Downloading the class roster export returns real CSV, not JSON", async () => {
     const res = await request(app).get(`/api/fs/classes/${classId}/roster-export`).set("Cookie", adminCookie);
-    logResponse("Foundational School", "Admin -> GET roster CSV export", res.status, { contentType: res.headers["content-type"], bodyPreview: String(res.text).slice(0, 300) });
+    logResponse("Foundational School", "VP -> GET roster CSV export", res.status, { contentType: res.headers["content-type"], bodyPreview: String(res.text).slice(0, 300) });
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toContain("text/csv");
   });
 
   it("Withdrawing the student succeeds", async () => {
     const res = await request(app).patch(`/api/fs/students/${studentId}/withdraw`).set("Cookie", adminCookie);
-    logResponse("Foundational School", "Admin -> withdraw student", res.status, res.body);
+    logResponse("Foundational School", "VP -> withdraw student", res.status, res.body);
     expect(res.status).toBe(200);
     expect(res.body.data.status).toBe("Withdrawn");
   });
 
   it("Withdrawing a second time is rejected (no longer Active)", async () => {
     const res = await request(app).patch(`/api/fs/students/${studentId}/withdraw`).set("Cookie", adminCookie);
-    logResponse("Foundational School", "Admin -> withdraw again (should fail)", res.status, res.body);
+    logResponse("Foundational School", "VP -> withdraw again (should fail)", res.status, res.body);
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe("STUDENT_NOT_ACTIVE");
   });

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../../middleware/requireAuth.js";
-import { requirePermission } from "../../middleware/requirePermission.js";
+import { requireOffice } from "../../middleware/requireOffice.js";
 import { upload_, download, uploadMiddleware } from "./fsManual.controller.js";
 import multer from "multer";
 import { AppError } from "../../errors/appError.js";
@@ -16,5 +16,5 @@ function handleUpload(req: any, res: any, next: any) {
   });
 }
 
-fsManualRouter.post("/", requireAuth, requirePermission("fs.admissions.review"), handleUpload, upload_);
+fsManualRouter.post("/", requireAuth, requireOffice("vice-president"), handleUpload, upload_);
 fsManualRouter.get("/", requireAuth, download);

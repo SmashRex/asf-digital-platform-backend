@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import { app } from "../src/app.js";
 import { db } from "../src/db/index.js";
-import { departments, handovers, userExecutiveOffices, users } from "../src/db/schema/index.js";
+import { departments, handovers, userDashboardAccess, userExecutiveOffices, users } from "../src/db/schema/index.js";
 import { eq, and, inArray } from "drizzle-orm";
 import * as handoverService from "../src/modules/handover/handover.service.js";
 
@@ -13,16 +13,23 @@ const UUID_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{1
 
 const TOUCHED_OFFICES = ["president", "publicity-coordinator"];
 let officeBaseline: { userId: string; officeId: string; assignedBy: string | null }[] = [];
+const TOUCHED_DASHBOARDS = ["president", "publicity"];
+let dashboardBaseline: { userId: string; dashboardId: string; grantedBy: string | null; grantedAt: Date }[] = [];
 
 beforeAll(async () => {
   officeBaseline = (await db.select().from(userExecutiveOffices).where(inArray(userExecutiveOffices.officeId, TOUCHED_OFFICES)))
     .map(({ userId, officeId, assignedBy }) => ({ userId, officeId, assignedBy }));
 }, 120_000);
 
+dashboardBaseline = (await db.select().from(userDashboardAccess).where(inArray(userDashboardAccess.dashboardId, TOUCHED_DASHBOARDS)))
+  .map(({ userId, dashboardId, grantedBy, grantedAt }) => ({ userId, dashboardId, grantedBy, grantedAt }));
+
 afterAll(async () => {
   await db.delete(userExecutiveOffices).where(inArray(userExecutiveOffices.officeId, TOUCHED_OFFICES));
   if (officeBaseline.length > 0) await db.insert(userExecutiveOffices).values(officeBaseline);
 }, 120_000);
+
+if (dashboardBaseline.length > 0) await db.insert(userDashboardAccess).values(dashboardBaseline).onConflictDoNothing();
 
 let adminSession: { cookie: string; id: string } | undefined;
 
@@ -88,6 +95,7 @@ describe("executive handover", () => {
       await db.update(users).set({ name: presidentName }).where(eq(users.id, incomingPresident));
       await db.update(users).set({ name: publicityName }).where(eq(users.id, incomingPublicity));
       await db.insert(userExecutiveOffices).values({ userId: outgoing, officeId: "president", assignedBy: adminId });
+      await db.insert(userDashboardAccess).values({ userId: outgoing, dashboardId: "president" });
 
       const csv = `name,academicLevel,subgroup,office\n${presidentName},100 Level,Bible Study,President\n${publicityName},100 Level,Bible Study,Public Relation Officer (PRO)/Publicity Coordinator\n`;
       const submitted = await request(app)
@@ -114,6 +122,9 @@ describe("executive handover", () => {
       expect(presidentAssignment).toHaveLength(1);
       expect(outgoingAssignment).toHaveLength(0);
       expect(outgoingUser).toHaveLength(1);
+      const outgoingDashboard = await db.select().from(userDashboardAccess)
+  .where(and(eq(userDashboardAccess.userId, outgoing), eq(userDashboardAccess.dashboardId, "president")));
+expect(outgoingDashboard).toHaveLength(0);
     } finally {
       // Wipe whatever the test left in these offices, then put back exactly what was there before.
       await db.delete(userExecutiveOffices).where(inArray(userExecutiveOffices.officeId, touchedOffices));
