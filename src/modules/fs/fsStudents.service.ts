@@ -1,23 +1,37 @@
 import { AppError } from "../../errors/appError.js";
 import * as repo from "./fsStudents.repository.js";
-import { updateSubgroup } from "../members/members.repository.js";
-import { db } from "../../db/index.js";
-import { recordAudit } from "../../utils/auditLog.js";
+import { csvCell } from "../../utils/csvCell.js";
+import { STUDENT_STATUSES, type ExportStudentsQuery, type ListStudentsQuery } from "./fsStudents.validation.js";
 
-
-export async function getStudents(classId?: string) {
-  return repo.listStudents(classId);
+function assertValidStatus(status?: string) {
+  if (status && !(STUDENT_STATUSES as readonly string[]).includes(status)) {
+    throw AppError.badRequest("Invalid status filter", "INVALID_STATUS_FILTER");
+  }
 }
 
-export async function recordCompletion(studentId: string, recordedBy: string) {
-  const student = await repo.findById(studentId);
+export async function getStudents(query: ListStudentsQuery) {
+  assertValidStatus(query.status);
+  return repo.listStudents(query);
+}
+
+export async function getStudentDetail(id: string) {
+  const student = await repo.findDetailById(id);
   if (!student) {
     throw AppError.notFound("Student not found", "STUDENT_NOT_FOUND");
   }
-  if (student.status !== "Active") {
-    throw AppError.conflict("Only active students can be marked as graduated", "STUDENT_NOT_ACTIVE");
-  }
-  return repo.updateStatus(studentId, { status: "Graduated", completionRecordedBy: recordedBy });
+  return student;
+}
+
+export async function exportStudentsCsv(filters: ExportStudentsQuery) {
+  assertValidStatus(filters.status);
+  const rows = await repo.listStudentsForExport(filters);
+  const header = ["Name", "Email", "Phone", "Level", "Department", "Class", "Status"].join(",");
+  const lines = rows.map((row) =>
+    [row.studentName, row.studentEmail, row.studentPhone, row.academicLevel, row.department, row.className, row.status]
+      .map(csvCell)
+      .join(",")
+  );
+  return [header, ...lines].join("\n");
 }
 
 export async function withdrawStudent(studentId: string) {
@@ -29,24 +43,4 @@ export async function withdrawStudent(studentId: string) {
     throw AppError.conflict("Only active students can be withdrawn", "STUDENT_NOT_ACTIVE");
   }
   return repo.updateStatus(studentId, { status: "Withdrawn" });
-}
-
-
-export async function bulkGraduate(rows: { name: string; academicLevel: string; subgroup: string }[], actingUserId: string) {
-  return db.transaction(async (tx) => {
-    const results: { name: string; status: string }[] = [];
-
-    for (const row of rows) {
-      const user = await repo.findUserByNameAndLevel(row.name, row.academicLevel);
-      if (!user) {
-        results.push({ name: row.name, status: "NOT_FOUND" });
-        continue;
-      }
-      await updateSubgroup(user.id, row.subgroup, tx);
-      await recordAudit({ actorId: actingUserId, action: "subgroup.updated", targetType: "user", targetId: user.id, metadata: { subgroup: row.subgroup, source: "fs_bulk_graduation" } }, tx);
-      results.push({ name: row.name, status: "UPDATED" });
-    }
-
-    return results;
-  });
 }
