@@ -57,3 +57,11 @@ export async function findUserByNameAndLevel(name: string, academicLevel: string
   const rows = await db.select().from(users).where(and(eq(users.name, name), eq(users.academicLevel, academicLevel)));
   return rows[0] ?? null;
 }
+
+export async function findActiveByUser(userId: string) {
+  const rows = await db
+    .select({ id: fsStudents.id })
+    .from(fsStudents)
+    .where(and(eq(fsStudents.userId, userId), eq(fsStudents.status, "Active")));
+  return rows[0] ?? null;
+}
