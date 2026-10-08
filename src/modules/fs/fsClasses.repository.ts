@@ -80,7 +80,10 @@ export async function addTeacher(classId: string, teacherId: string) {
 }
 
 export async function removeTeacher(classId: string, teacherId: string) {
-  await db.delete(fsClassTeachers).where(and(eq(fsClassTeachers.classId, classId), eq(fsClassTeachers.teacherId, teacherId)));
+  return db
+    .delete(fsClassTeachers)
+    .where(and(eq(fsClassTeachers.classId, classId), eq(fsClassTeachers.teacherId, teacherId)))
+    .returning({ id: fsClassTeachers.id });
 }
 
 export async function getRoster(classId: string) {

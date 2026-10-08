@@ -1,5 +1,7 @@
 import { AppError } from "../../errors/appError.js";
 import * as repo from "./fsClasses.repository.js";
+import * as teachersRepo from "./fsTeachers.repository.js";
+import { assertEligibleTeacher } from "./fsTeachers.service.js";
 import { csvCell } from "../../utils/csvCell.js";
 import type { CreateClassInput, UpdateClassInput, TeacherActionInput, ListClassesQuery } from "./fsClasses.validation.js";
 
@@ -38,6 +40,13 @@ export async function manageTeacher(classId: string, input: TeacherActionInput) 
   }
 
   if (input.action === "assign") {
+    if (fsClass.status !== "Active") {
+      throw AppError.conflict("This class is not active", "CLASS_NOT_ACTIVE");
+    }
+    await assertEligibleTeacher(input.teacherId);
+    if (await teachersRepo.isAssigned(classId, input.teacherId)) {
+      throw AppError.conflict("This teacher is already assigned to this class", "TEACHER_ALREADY_ASSIGNED");
+    }
     if (fsClass.teacherCap !== null) {
       const current = await repo.countTeachers(classId);
       if (current >= fsClass.teacherCap) {
@@ -54,7 +63,10 @@ export async function manageTeacher(classId: string, input: TeacherActionInput) 
     }
   }
 
-  await repo.removeTeacher(classId, input.teacherId);
+  const removed = await repo.removeTeacher(classId, input.teacherId);
+  if (removed.length === 0) {
+    throw AppError.notFound("This teacher is not assigned to this class", "TEACHER_NOT_ASSIGNED");
+  }
   return { removed: true };
 }
 

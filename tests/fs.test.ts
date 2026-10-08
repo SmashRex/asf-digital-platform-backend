@@ -3,7 +3,7 @@ import request from "supertest";
 import { eq } from "drizzle-orm";
 import { app } from "../src/app.js";
 import { db } from "../src/db/index.js";
-import { userExecutiveOffices } from "../src/db/schema/index.js";
+import { userExecutiveOffices, users } from "../src/db/schema/index.js";
 import { logResponse } from "./helpers/logResponse.js";
 
 vi.setConfig({ testTimeout: 300_000 });
@@ -53,6 +53,7 @@ describe("Foundational School", () => {
 
     const teacher = await registerMember("Emeka Obi", "physics", "Male", "500 Level");
     teacherUserId = teacher.id;
+        await db.update(users).set({ subgroup: "Prayer" }).where(eq(users.id, teacherUserId));
   });
 
   it("Applicant with no subgroup CAN apply for FS", async () => {

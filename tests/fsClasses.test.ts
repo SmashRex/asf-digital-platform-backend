@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { app } from "../src/app.js";
 import { db } from "../src/db/index.js";
-import { userExecutiveOffices } from "../src/db/schema/index.js";
+import { userExecutiveOffices, users } from "../src/db/schema/index.js";
 
 vi.setConfig({ testTimeout: 300_000 });
 
@@ -40,6 +40,7 @@ describe("FS classes (VP)", () => {
     await db.insert(userExecutiveOffices).values({ userId: vpId, officeId: "vice-president" });
     outsiderCookie = (await registerMember(`Classes Outsider ${stamp}`, "100 Level")).cookie;
     teacherId = (await registerMember(teacherName, "500 Level")).id;
+    await db.update(users).set({ subgroup: "Prayer" }).where(eq(users.id, teacherId));
   });
 
   it("create validates the body and the academic session", async () => {
