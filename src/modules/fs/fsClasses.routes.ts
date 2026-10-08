@@ -2,6 +2,7 @@ import { Router } from "express";
 import { requireAuth } from "../../middleware/requireAuth.js";
 import { requireOffice } from "../../middleware/requireOffice.js";
 import { create, list, detail, update, manageTeacher, rosterExport } from "./fsClasses.controller.js";
+import { finalize } from "./fsFinalize.controller.js";
 
 export const fsClassesRouter = Router();
 
@@ -13,3 +14,4 @@ fsClassesRouter.get("/:id/roster-export", ...vpAccess, rosterExport);
 fsClassesRouter.get("/:id", ...vpAccess, detail);
 fsClassesRouter.put("/:id", ...vpAccess, update);
 fsClassesRouter.post("/:id/teachers", ...vpAccess, manageTeacher);
+fsClassesRouter.post("/:id/finalize", ...vpAccess, finalize);
